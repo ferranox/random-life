@@ -1,0 +1,77 @@
+/* names.js — culturally grouped name lists + generateName()
+ * Classic script (no ES modules). Attaches to global App namespace.
+ * All names are illustrative, not exhaustive. People generated are fictional.
+ */
+(function (global) {
+  'use strict';
+  var App = global.App = global.App || {};
+
+  var NAMES = {
+    south_asian: {
+      male: ['Arjun', 'Rahul', 'Amit', 'Suresh', 'Rajesh', 'Mohammed', 'Ali', 'Hassan', 'Imran', 'Farhan', 'Vikram', 'Ravi', 'Kiran', 'Deepak', 'Sanjay', 'Tariq', 'Bilal', 'Zahid'],
+      female: ['Priya', 'Anjali', 'Deepa', 'Ananya', 'Fatima', 'Aisha', 'Zainab', 'Nadia', 'Sana', 'Hina', 'Pooja', 'Lakshmi', 'Meera', 'Rani', 'Sakshi', 'Rukhsar', 'Farah'],
+      surnames: ['Kumar', 'Singh', 'Patel', 'Sharma', 'Khan', 'Shah', 'Hussain', 'Ali', 'Ahmed', 'Islam', 'Gupta', 'Verma', 'Mishra', 'Yadav', 'Rao']
+    },
+    east_asian: {
+      male: ['Wei', 'Jun', 'Hao', 'Ming', 'Lei', 'Yang', 'Chen', 'Feng', 'Tao', 'Bo', 'Hiroshi', 'Kenji', 'Takashi', 'Ryo', 'Daiki', 'Minjun', 'Jihoon', 'Seojun'],
+      female: ['Mei', 'Ling', 'Fang', 'Yan', 'Xia', 'Jing', 'Hui', 'Na', 'Lan', 'Qing', 'Yuki', 'Sakura', 'Hana', 'Aiko', 'Rin', 'Jiwoo', 'Seoyeon', 'Hana'],
+      surnames: ['Wang', 'Li', 'Zhang', 'Liu', 'Chen', 'Yang', 'Kim', 'Lee', 'Park', 'Sato', 'Suzuki', 'Tanaka', 'Wu', 'Zhao', 'Choi']
+    },
+    southeast_asian: {
+      male: ['Somchai', 'Anan', 'Nguyen', 'Minh', 'Tuan', 'Budi', 'Agus', 'Joko', 'Andi', 'Rizki', 'Jose', 'Mark', 'Ramon', 'Aung', 'Kyaw', 'Sokha', 'Dara', 'Bao'],
+      female: ['Siriporn', 'Malee', 'Linh', 'Huong', 'Mai', 'Sri', 'Dewi', 'Ayu', 'Putri', 'Ratna', 'Maria', 'Grace', 'Angel', 'Su', 'Thida', 'Sophea', 'Chan', 'Nurul'],
+      surnames: ['Nguyen', 'Tran', 'Le', 'Pham', 'Santos', 'Reyes', 'Cruz', 'Wijaya', 'Saputra', 'Tan', 'Lim', 'Wong', 'Chai', 'Prasad', 'Sok']
+    },
+    sub_saharan: {
+      male: ['Kwame', 'Kofi', 'Chidi', 'Emeka', 'Tunde', 'Sipho', 'Thabo', 'Mandla', 'Musa', 'Abdi', 'Ibrahim', 'Samuel', 'Joseph', 'Daniel', 'Peter', 'Amadou', 'Ousmane', 'Tafari'],
+      female: ['Ama', 'Akosua', 'Ngozi', 'Chioma', 'Amara', 'Nomsa', 'Thandiwe', 'Zanele', 'Fatou', 'Aisha', 'Grace', 'Mary', 'Esther', 'Ruth', 'Blessing', 'Aminata', 'Wanjiru', 'Halima'],
+      surnames: ['Okafor', 'Mensah', 'Osei', 'Dlamini', 'Nkosi', 'Mwangi', 'Otieno', 'Abebe', 'Diallo', 'Traore', 'Adeyemi', 'Banda', 'Moyo', 'Ndlovu', 'Sesay']
+    },
+    arab_middle_east: {
+      male: ['Ahmed', 'Mohammed', 'Ali', 'Omar', 'Youssef', 'Khalid', 'Hassan', 'Ibrahim', 'Mustafa', 'Karim', 'Samir', 'Tariq', 'Nabil', 'Fadi', 'Bassam', 'Ziad', 'Rami', 'Walid'],
+      female: ['Fatima', 'Aisha', 'Layla', 'Noor', 'Mariam', 'Zaynab', 'Huda', 'Amina', 'Salma', 'Rania', 'Yasmin', 'Dalia', 'Hana', 'Lina', 'Reem', 'Sara', 'Nadia', 'Farah'],
+      surnames: ['Al-Sayed', 'Hassan', 'Ibrahim', 'Al-Ahmad', 'Khalil', 'Nasser', 'Haddad', 'Aziz', 'Mansour', 'Saleh', 'Rahman', 'Farah', 'Karam', 'Najjar', 'Darwish']
+    },
+    latin_american: {
+      male: ['Juan', 'Carlos', 'Jose', 'Luis', 'Miguel', 'Diego', 'Andres', 'Pedro', 'Rafael', 'Fernando', 'Ricardo', 'Javier', 'Antonio', 'Manuel', 'Eduardo', 'Sergio', 'Pablo', 'Gabriel'],
+      female: ['Maria', 'Ana', 'Sofia', 'Lucia', 'Camila', 'Valentina', 'Isabella', 'Gabriela', 'Daniela', 'Fernanda', 'Carmen', 'Rosa', 'Patricia', 'Laura', 'Adriana', 'Mariana', 'Juana', 'Elena'],
+      surnames: ['Garcia', 'Rodriguez', 'Martinez', 'Lopez', 'Gonzalez', 'Perez', 'Sanchez', 'Ramirez', 'Torres', 'Flores', 'Silva', 'Santos', 'Reyes', 'Morales', 'Cruz']
+    },
+    east_european: {
+      male: ['Andrei', 'Mihai', 'Ionut', 'Gheorghe', 'Stefan', 'Nikola', 'Marko', 'Stefan', 'Petar', 'Ivan', 'Janos', 'Gabor', 'Laszlo', 'Zoltan', 'Attila', 'Georgi', 'Dimitar', 'Vasil'],
+      female: ['Elena', 'Maria', 'Ioana', 'Andreea', 'Cristina', 'Ana', 'Milica', 'Jelena', 'Ivana', 'Marija', 'Eszter', 'Zsofia', 'Katalin', 'Anna', 'Reka', 'Ivana', 'Petya', 'Daniela'],
+      surnames: ['Popescu', 'Ionescu', 'Popa', 'Nikolic', 'Jovanovic', 'Petrovic', 'Nagy', 'Kovacs', 'Toth', 'Horvath', 'Ivanov', 'Georgiev', 'Dimitrov', 'Radu', 'Stan']
+    },
+    west_european: {
+      male: ['Lucas', 'Louis', 'Hugo', 'Leon', 'Felix', 'Matteo', 'Lorenzo', 'Marco', 'Pablo', 'Alvaro', 'Thomas', 'Julian', 'Maximilian', 'Sebastian', 'Daan', 'Sem', 'Liam', 'Noah'],
+      female: ['Emma', 'Lea', 'Chloe', 'Manon', 'Sophie', 'Giulia', 'Sofia', 'Aurora', 'Lucia', 'Martina', 'Marie', 'Anna', 'Laura', 'Julia', 'Sara', 'Emma', 'Mila', 'Lotte'],
+      surnames: ['Muller', 'Schmidt', 'Rossi', 'Ferrari', 'Garcia', 'Martin', 'Bernard', 'Dubois', 'Fernandez', 'Bianchi', 'De Vries', 'Jansen', 'Schneider', 'Fischer', 'Romano']
+    },
+    north_american_oceanian: {
+      male: ['James', 'John', 'Michael', 'William', 'David', 'Ethan', 'Jacob', 'Ryan', 'Tyler', 'Brandon', 'Liam', 'Noah', 'Oliver', 'Jack', 'Cooper', 'Mason', 'Logan', 'Aiden'],
+      female: ['Emily', 'Emma', 'Olivia', 'Sophia', 'Ava', 'Isabella', 'Mia', 'Charlotte', 'Amelia', 'Harper', 'Grace', 'Chloe', 'Ella', 'Zoe', 'Lily', 'Madison', 'Abigail', 'Hannah'],
+      surnames: ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Miller', 'Davis', 'Wilson', 'Taylor', 'Anderson', 'Thomas', 'Moore', 'Martin', 'Thompson', 'White']
+    },
+    slavic: {
+      male: ['Ivan', 'Dmitri', 'Sergei', 'Alexei', 'Vladimir', 'Nikolai', 'Andrei', 'Mikhail', 'Pavel', 'Oleg', 'Yuri', 'Boris', 'Igor', 'Roman', 'Maksim', 'Bohdan', 'Taras', 'Mykola'],
+      female: ['Olga', 'Natalia', 'Elena', 'Irina', 'Svetlana', 'Tatiana', 'Anna', 'Maria', 'Ekaterina', 'Yulia', 'Oksana', 'Ludmila', 'Galina', 'Vera', 'Nina', 'Kateryna', 'Iryna', 'Marta'],
+      surnames: ['Ivanov', 'Smirnov', 'Kuznetsov', 'Popov', 'Volkov', 'Petrov', 'Sokolov', 'Melnyk', 'Shevchenko', 'Kovalenko', 'Bondarenko', 'Morozov', 'Novikov', 'Fedorov', 'Pavlenko']
+    }
+  };
+
+  function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function generateName(region, sex) {
+    var group = NAMES[region] || NAMES.north_american_oceanian;
+    var firstList = sex === 'male' ? group.male : group.female;
+    return {
+      first: pick(firstList),
+      last: pick(group.surnames)
+    };
+  }
+
+  App.NAMES = NAMES;
+  App.generateName = generateName;
+})(typeof window !== 'undefined' ? window : this);

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="Generate a statistically plausible fictional person from anywhere on Earth.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Random Life">
+  <meta property="og:title" content="Random Life — Discover a Random Life">
+  <meta property="og:description" content="Generate a statistically plausible fictional person from anywhere on Earth.">
+  <meta property="og:url" content="https://random-life.ferranox.xyz/">
+  <meta property="og:image" content="https://random-life.ferranox.xyz/icons/icon.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1024">
+  <meta property="og:image:height" content="1024">
+  <meta property="og:image:alt" content="Random Life icon">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Random Life — Discover a Random Life">
+  <meta name="twitter:description" content="Generate a statistically plausible fictional person from anywhere on Earth.">
+  <meta name="twitter:image" content="https://random-life.ferranox.xyz/icons/icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Random Life">
+  <title>Random Life — Discover a Random Life</title>
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <script src="js/theme.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <span class="site-title">Random Life</span>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>Would you swap your life for a random life?</h1>
+      <p class="tagline">Press below to generate a statistically plausible fictional person anywhere on Earth.</p>
+      <button id="generate-btn" class="btn-primary" type="button" aria-label="Generate a random person">
+        <span class="btn-label">Generate Random Life</span>
+        <span class="btn-spinner" aria-hidden="true"></span>
+      </button>
+    </section>
+
+    <section id="profile-section" aria-live="polite" hidden>
+      <div class="profile-card">
+        <div class="profile-header">
+          <div class="profile-identity">
+            <span class="person-name"></span>
+            <span class="person-age-gender"></span>
+            <span class="person-country">
+              <span class="country-flag"></span>
+              <span class="country-name"></span>
+            </span>
+          </div>
+        </div>
+        <dl class="profile-attributes"></dl>
+        <div class="profile-footer">
+          <span class="data-source-note"></span>
+          <button id="regenerate-btn" class="btn-secondary" type="button">
+            <span class="btn-label">Generate another</span>
+            <span class="btn-spinner" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section id="data-status" aria-live="polite"></section>
+  </main>
+
+  <footer class="site-footer">
+    <button id="info-btn" class="btn-link" type="button" aria-expanded="false" aria-controls="info-dialog">Data &amp; Methodology</button>
+    <p class="disclaimer">Generated people are entirely fictional. Statistics approximate real global distributions.</p>
+    <p class="copyright">© 2026 Alex Bowles. All rights reserved.</p>
+  </footer>
+
+  <dialog id="info-dialog" aria-label="Data sources and methodology">
+    <button class="dialog-close" type="button">Close</button>
+    <h2>Data Sources &amp; Methodology</h2>
+
+    <h3>Data sources</h3>
+    <ul>
+      <li><strong>World Bank Open Data</strong> — population, life expectancy (male &amp; female), urbanisation rate, GDP per capita, electricity access, basic drinking water, basic sanitation, internet use, and fertility rate.</li>
+      <li><strong>UN Population Division</strong> — informs the age-distribution model used per income group.</li>
+      <li><strong>International Labour Organization (ILO)</strong> — reference for the employment categories and occupation mix.</li>
+    </ul>
+
+    <h3>Live data</h3>
+    <p>When online, the app fetches the most recent value (<code>mrv=5</code>, newest available kept) for these World Bank indicators and merges them over the built-in dataset:</p>
+    <ul>
+      <li><code>SP.POP.TOTL</code> — total population</li>
+      <li><code>SP.DYN.LE00.MA.IN</code> — life expectancy at birth, male</li>
+      <li><code>SP.DYN.LE00.FE.IN</code> — life expectancy at birth, female</li>
+      <li><code>SP.URB.TOTL.IN.ZS</code> — urban population (% of total)</li>
+      <li><code>NY.GDP.PCAP.CD</code> — GDP per capita (current US$)</li>
+      <li><code>EG.ELC.ACCS.ZS</code> — access to electricity (% of population)</li>
+      <li><code>SH.H2O.BASW.ZS</code> — people using at least basic drinking water services (%)</li>
+      <li><code>SH.STA.BASS.ZS</code> — people using at least basic sanitation services (%)</li>
+      <li><code>IT.NET.USER.ZS</code> — individuals using the internet (% of population)</li>
+      <li><code>SP.DYN.TFRT.IN</code> — fertility rate (births per woman)</li>
+    </ul>
+    <p>Results are cached in your browser session so they are not re-fetched on every reload. If the API is unavailable, the app falls back to cached and then built-in data.</p>
+
+    <h3>Methodology</h3>
+    <ul>
+      <li><strong>Country</strong> is chosen at random, weighted by population — so more populous countries appear more often, mirroring where people actually live.</li>
+      <li><strong>Age</strong> is drawn from age-band weights that differ by the country's World Bank income group (low, lower-middle, upper-middle, high), reflecting younger populations in lower-income countries.</li>
+      <li><strong>Urban vs. rural</strong> is decided by the country's urbanisation rate.</li>
+      <li><strong>Occupation</strong> is sampled from an income-group- and habitat-weighted list, constrained by plausible working ages, with student/retirement shares that vary by income group.</li>
+      <li><strong>Income</strong> is modelled from GDP per capita, an occupation multiplier, an age adjustment, and log-normal noise. It is an order-of-magnitude estimate, not a precise figure.</li>
+      <li><strong>Life expectancy</strong> is the national average for the person's sex.</li>
+      <li><strong>Electricity, drinking water, sanitation, and internet</strong> are individualised: the person either has it or not, drawn from the national access rate (e.g. a country with 63% electricity access gives each person a 63% chance). The national rate is shown alongside.</li>
+      <li><strong>Children</strong> is the person's individualised number of children, drawn from the national fertility rate and adjusted for age — under-18s have none, and completed family size is approached by the mid-40s. The national average is shown alongside for context.</li>
+    </ul>
+
+    <h3>Limitations</h3>
+    <ul>
+      <li>Income figures are modelled estimates in nominal USD — <em>not</em> adjusted for local purchasing power (PPP).</li>
+      <li>Age distributions approximate broad income-group patterns rather than each country's exact pyramid.</li>
+      <li>Name lists are illustrative, grouped by broad cultural region, and are not exhaustive or country-specific.</li>
+      <li>"Current" data reflects the most recently available World Bank figures, which typically lag by 1–2 years.</li>
+    </ul>
+
+    <h3>Note</h3>
+    <p>All generated people are <strong>entirely fictional</strong>. No attempt is made to represent any real individual, living or dead.</p>
+  </dialog>
+
+  <!-- Classic scripts, loaded in dependency order (no bundler required). -->
+  <script src="js/names.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/generator.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
