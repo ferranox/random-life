@@ -1,3 +1,8 @@
+/* app.js - the beginning,
+ * 1. Register the service worker
+ * 2. Load data
+ * 3. Wire up the ui
+ */
 (function (global) {
   'use strict';
   var App = global.App = global.App || {};
