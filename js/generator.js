@@ -1,6 +1,5 @@
-/* generator.js — random-person algorithm.
- * Depends on: App.NAMES/generateName, App.AGE_BANDS, App.AGE_WEIGHTS,
- *             App.OCCUPATIONS, App.HABITATION, App.DATA_LOAD_STATUS.
+/* generator.js - random-person algorithm.
+ * Depends on: App.NAMES/generateName, App.AGE_BANDS, App.AGE_WEIGHTS, App.OCCUPATIONS, App.HABITATION, App.DATA_LOAD_STATUS.
  */
 (function (global) {
   'use strict';
