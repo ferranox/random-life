@@ -1,7 +1,5 @@
-/* ui.js — DOM controller & rendering.
- * Classic script (no ES modules). Attaches to global App namespace.
- * Exposes App.initUI(generateFn) and App.updateDataStatus().
- */
+/* ui.js - dom controller & rendering.
+*/
 (function (global) {
   'use strict';
   var App = global.App = global.App || {};
@@ -73,8 +71,7 @@
       genderPronounForLE(person.sex) + ' in ' + person.country.name + ')';
     els.attributes.appendChild(attrRow('Life expectancy', leText));
 
-    // Children: the person's individualised count, with the national
-    // fertility average for context.
+    // Children: individual amount + national average
     if (person.children == null || person.fertility == null) {
       els.attributes.appendChild(attrRow('Children', 'N/A'));
     } else {
@@ -82,7 +79,7 @@
         person.children + ' (' + person.fertility + ' per woman average in ' + person.country.name + ')'));
     }
 
-    // Daily-life access: individualised outcome + national rate for context.
+    // Daily-life access: individual amount + national average
     function accessRow(label, has, pct) {
       var value;
       if (has == null || pct == null) {
@@ -107,10 +104,10 @@
       els.attributes.appendChild(attrRow('Internet', netVal));
     }
 
-    // Footer note
+    // footer note
     els.dataSourceNote.textContent = dataSourceBadge(person.dataSource);
 
-    // Reveal with animation
+    // Nice animation
     els.profileSection.hidden = false;
     els.profileCard.classList.remove('revealed');
     global.requestAnimationFrame(function () {
@@ -119,7 +116,7 @@
       });
     });
 
-    // Move focus to the profile card for accessibility.
+    // Move focus to the profile card
     els.profileCard.setAttribute('tabindex', '-1');
     try { els.profileCard.focus({ preventScroll: false }); } catch (e) { els.profileCard.focus(); }
   }
@@ -134,7 +131,6 @@
 
   function handleGenerate(generateFn) {
     setLoading(true);
-    // Let the loading state paint before the (fast) synchronous work.
     global.requestAnimationFrame(function () {
       global.setTimeout(function () {
         try {
