@@ -1,7 +1,4 @@
-/* theme.js — follows the browser's light/dark setting.
- * Classic script, loaded in <head> so the theme is set before first paint.
- * Sets data-theme="light" | "dark" on <html> and keeps <meta name="theme-color">
- * in sync. Updates live if the browser or OS theme changes while the page is open.
+/* theme.js - bro idk i found this js ages ago and use it everywhere. detects light/dark theme.
  */
 (function (global) {
   'use strict';
