@@ -53,8 +53,38 @@
   }
 
   // Step 3: age
-  function selectAge(incomeGroup) {
-    var weights = App.AGE_WEIGHTS[incomeGroup] || App.AGE_WEIGHTS.LM;
+  // Country-specific when available: the country's young share (ages 0-14)
+  // and old share (65+) come from World Bank data (SP.POP.0014.TO.ZS /
+  // SP.POP.65UP.TO.ZS, live with built-in fallback) and anchor the 6-band
+  // model; the working-age remainder (15-64) and the within-group splits
+  // (0-4 vs 5-14, 15-24 vs 25-54 vs 55-64) follow the income-group pattern.
+  // Without per-country data, falls back to the pure income-group weights.
+  function countryAgeWeights(country, incomeGroup) {
+    if (!country || country.age014 == null || country.age65 == null) return null;
+    var young = Number(country.age014);
+    var old = Number(country.age65);
+    if (!(young >= 0 && old >= 0) || young + old >= 100) return null;
+    var base = App.AGE_WEIGHTS[incomeGroup] || App.AGE_WEIGHTS.LM;
+    var youngBase = base[0] + base[1];
+    var workBase = base[2] + base[3] + base[4];
+    if (!(youngBase > 0 && workBase > 0)) return null;
+    var working = 100 - young - old;
+    return [
+      young * (base[0] / youngBase),
+      young * (base[1] / youngBase),
+      working * (base[2] / workBase),
+      working * (base[3] / workBase),
+      working * (base[4] / workBase),
+      old
+    ];
+  }
+
+  function selectAge(countryOrGroup) {
+    var country = (countryOrGroup && typeof countryOrGroup === 'object') ? countryOrGroup : null;
+    var incomeGroup = country ? country.incomeGroup : countryOrGroup;
+    var weights = (country && countryAgeWeights(country, incomeGroup)) ||
+      App.AGE_WEIGHTS[incomeGroup] ||
+      App.AGE_WEIGHTS.LM;
     var idx = weightedIndex(weights);
     var band = App.AGE_BANDS[idx];
     return randInt(band.min, band.max);
@@ -208,7 +238,7 @@
     var country = selectCountry(countries);
     var ig = country.incomeGroup;
     var sex = selectSex();
-    var age = selectAge(ig);
+    var age = selectAge(country);
     var isUrban = Math.random() < ((country.urban || 50) / 100);
 
     var occupation = selectOccupation(ig, age, isUrban, sex);
@@ -275,4 +305,5 @@
   }
 
   App.generatePerson = generatePerson;
+  App.countryAgeWeights = countryAgeWeights;
 })(typeof window !== 'undefined' ? window : this);

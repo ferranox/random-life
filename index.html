@@ -7,7 +7,7 @@
   <meta name="description" content="Generate a statistically plausible fictional person from anywhere on Earth.">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Random Life">
-  <meta property="og:title" content="Random Life — Discover a Random Life">
+  <meta property="og:title" content="Random Life - Discover a Random Life">
   <meta property="og:description" content="Generate a statistically plausible fictional person from anywhere on Earth.">
   <meta property="og:url" content="https://random-life.ferranox.xyz/">
   <meta property="og:image" content="https://random-life.ferranox.xyz/icons/icon.png">
@@ -16,13 +16,13 @@
   <meta property="og:image:height" content="1024">
   <meta property="og:image:alt" content="Random Life icon">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Random Life — Discover a Random Life">
+  <meta name="twitter:title" content="Random Life - Discover a Random Life">
   <meta name="twitter:description" content="Generate a statistically plausible fictional person from anywhere on Earth.">
   <meta name="twitter:image" content="https://random-life.ferranox.xyz/icons/icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Random Life">
-  <title>Random Life — Discover a Random Life</title>
+  <title>Random Life - Discover a Random Life</title>
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="favicon.ico" sizes="any">
@@ -82,45 +82,47 @@
 
       <h3>Data sources</h3>
       <ul>
-        <li><strong>World Bank Open Data</strong> — population, life expectancy (male &amp; female), urbanisation rate, GDP per capita, electricity access, basic drinking water, basic sanitation, internet use, and fertility rate.</li>
-        <li><strong>UN Population Division</strong> — informs the age-distribution model used per income group.</li>
-        <li><strong>International Labour Organization (ILO)</strong> — reference for the employment categories and occupation mix.</li>
+        <li><strong>World Bank Open Data</strong> - population, life expectancy (male and female), urbanisation rate, GDP per capita, electricity access, basic drinking water, basic sanitation, internet use, fertility rate, and age structure (share aged 0-14 and 65+).</li>
+        <li><strong>UN Population Division</strong> - the age-structure figures rest on its World Population Prospects, and it informs the within-income-group age splits.</li>
+        <li><strong>International Labour Organization (ILO)</strong> - reference for the employment categories and occupation mix.</li>
       </ul>
 
       <h3>Live data</h3>
       <p>When online, the app fetches the most recent value (<code>mrv=5</code>, newest available kept) for these World Bank indicators and merges them over the built-in dataset:</p>
       <ul>
-        <li><code>SP.POP.TOTL</code> — total population</li>
-        <li><code>SP.DYN.LE00.MA.IN</code> — life expectancy at birth, male</li>
-        <li><code>SP.DYN.LE00.FE.IN</code> — life expectancy at birth, female</li>
-        <li><code>SP.URB.TOTL.IN.ZS</code> — urban population (% of total)</li>
-        <li><code>NY.GDP.PCAP.CD</code> — GDP per capita (current US$)</li>
-        <li><code>EG.ELC.ACCS.ZS</code> — access to electricity (% of population)</li>
-        <li><code>SH.H2O.BASW.ZS</code> — people using at least basic drinking water services (%)</li>
-        <li><code>SH.STA.BASS.ZS</code> — people using at least basic sanitation services (%)</li>
-        <li><code>IT.NET.USER.ZS</code> — individuals using the internet (% of population)</li>
-        <li><code>SP.DYN.TFRT.IN</code> — fertility rate (births per woman)</li>
+        <li><code>SP.POP.TOTL</code> - total population</li>
+        <li><code>SP.DYN.LE00.MA.IN</code> - life expectancy at birth, male</li>
+        <li><code>SP.DYN.LE00.FE.IN</code> - life expectancy at birth, female</li>
+        <li><code>SP.URB.TOTL.IN.ZS</code> - urban population (% of total)</li>
+        <li><code>NY.GDP.PCAP.CD</code> - GDP per capita (current US$)</li>
+        <li><code>EG.ELC.ACCS.ZS</code> - access to electricity (% of population)</li>
+        <li><code>SH.H2O.BASW.ZS</code> - people using at least basic drinking water services (%)</li>
+        <li><code>SH.STA.BASS.ZS</code> - people using at least basic sanitation services (%)</li>
+        <li><code>IT.NET.USER.ZS</code> - individuals using the internet (% of population)</li>
+        <li><code>SP.DYN.TFRT.IN</code> - fertility rate (births per woman)</li>
+        <li><code>SP.POP.0014.TO.ZS</code> - population ages 0-14 (% of total)</li>
+        <li><code>SP.POP.65UP.TO.ZS</code> - population ages 65+ (% of total)</li>
       </ul>
       <p>Results are cached in your browser session so they are not re-fetched on every reload. If the API is unavailable, the app falls back to cached and then built-in data.</p>
 
       <h3>Methodology</h3>
       <ul>
-        <li><strong>Country</strong> is chosen at random, weighted by population — so more populous countries appear more often, mirroring where people actually live.</li>
-        <li><strong>Age</strong> is drawn from age-band weights that differ by the country's World Bank income group (low, lower-middle, upper-middle, high), reflecting younger populations in lower-income countries.</li>
-        <li><strong>Urban vs. rural</strong> is decided by the country's urbanisation rate.</li>
-        <li><strong>Occupation</strong> is sampled from an income-group- and habitat-weighted list, constrained by plausible working ages, with student/retirement shares that vary by income group.</li>
-        <li><strong>Income</strong> is modelled from GDP per capita, an occupation multiplier, an age adjustment, and log-normal noise. It is an order-of-magnitude estimate, not a precise figure.</li>
-        <li><strong>Life expectancy</strong> is the national average for the person's sex.</li>
-        <li><strong>Electricity, drinking water, sanitation, and internet</strong> are individualised: the person either has it or not, drawn from the national access rate (e.g. a country with 63% electricity access gives each person a 63% chance). The national rate is shown alongside.</li>
-        <li><strong>Children</strong> is the person's individualised number of children, drawn from the national fertility rate and adjusted for age — under-18s have none, and completed family size is approached by the mid-40s. The national average is shown alongside for context.</li>
+        <li><strong>Country</strong> - picked at random, weighted by population, so bigger countries turn up more often.</li>
+        <li><strong>Age</strong> - drawn from age bands fitted to the country's own share of children (0-14) and older people (65+), with the gaps filled in from its income-group pattern.</li>
+        <li><strong>Urban vs. rural</strong> - decided by the country's urbanisation rate.</li>
+        <li><strong>Occupation</strong> - sampled from a list weighted by income group and habitat, limited to plausible working ages, with student and retirement shares that differ by income group.</li>
+        <li><strong>Income</strong> - estimated from GDP per capita, an occupation multiplier, an age adjustment, plus some random variation. A rough figure in nominal USD, not PPP.</li>
+        <li><strong>Life expectancy</strong> - the national average for the person's sex.</li>
+        <li><strong>Electricity, drinking water, sanitation, and internet</strong> - the person either has it or not, drawn from the national rate (a country with 63% electricity access gives each person a 63% chance). The national rate is shown alongside.</li>
+        <li><strong>Children</strong> - drawn from the national fertility rate and adjusted for age: under-18s have none, and completed family size is approached by the mid-40s. The national average is shown alongside.</li>
       </ul>
 
       <h3>Limitations</h3>
       <ul>
-        <li>Income figures are modelled estimates in nominal USD — <em>not</em> adjusted for local purchasing power (PPP).</li>
-        <li>Age distributions approximate broad income-group patterns rather than each country's exact pyramid.</li>
-        <li>Name lists are illustrative, grouped by broad cultural region, and are not exhaustive or country-specific.</li>
-        <li>"Current" data reflects the most recently available World Bank figures, which typically lag by 1–2 years.</li>
+        <li>Income figures are rough estimates in nominal USD - <em>not</em> adjusted for local purchasing power (PPP).</li>
+        <li>Within working-age bands, the age mix follows income-group patterns rather than the country's exact 5-year pyramid.</li>
+        <li>Names are illustrative, grouped by broad cultural region, and are not exhaustive or country-specific.</li>
+        <li>"Current" data reflects the most recently available World Bank figures, which typically lag by 1-2 years.</li>
       </ul>
 
       <h3>Note</h3>
