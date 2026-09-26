@@ -23,11 +23,11 @@ No backend. Static HTML/CSS/JS - works offline once loaded.
 
 ## Data sources
 
-- **World Bank Open Data** — population, male/female life expectancy, urbanisation, GDP per capita, electricity, drinking water, sanitation, internet use, fertility rate.
-- **UN Population Division** — informs the per-income-group age model.
-- **ILO** — reference for employment categories and occupation mix.
+- **World Bank Open Data**- population, male/female life expectancy, urbanisation, GDP per capita, electricity, drinking water, sanitation, internet use, fertility rate.
+- **UN Population Division** - informs the per-income-group age model.
+- **ILO** - reference for employment categories and occupation mix.
 
-When online, the app fetches the latest available World Bank values for the above indicators and caches them for the session, falling back to built-in data when offline.
+When online, the app uses the latest available World Bank values for the above indicators and caches them for the session, falling back to built-in data when offline.
 
 ## Limitations
 
