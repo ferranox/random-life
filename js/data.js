@@ -1,6 +1,4 @@
-/* data.js — static fallback dataset, World Bank live fetcher, and model constants.
- * Classic script (no ES modules). Attaches to global App namespace.
- *
+/* data.js - fallback dataset, world bank live fetcher, and model constants
  * Data sources (approximate 2023-2024 figures):
  *   - Population: World Bank SP.POP.TOTL / UN estimates
  *   - Income group: World Bank classification (L, LM, UM, H)
@@ -17,9 +15,7 @@
   'use strict';
   var App = global.App = global.App || {};
 
-  // ---------------------------------------------------------------------------
-  // 1. STATIC FALLBACK DATASET
-  // ---------------------------------------------------------------------------
+  // 1. static fallback dataset
   var STATIC_COUNTRIES = [
     { code: 'IN', name: 'India', pop: 1428000000, incomeGroup: 'LM', leM: 70.5, leF: 73.6, urban: 36, gdpPc: 2411, elec: 100, water: 96, sanit: 83, net: 70, fert: 2.0, region: 'Asia', culture: 'south_asian', flag: '\uD83C\uDDEE\uD83C\uDDF3' },
     { code: 'CN', name: 'China', pop: 1412000000, incomeGroup: 'UM', leM: 75.0, leF: 80.5, urban: 64, gdpPc: 12720, elec: 100, water: 96, sanit: 97, net: 92, fert: 1.0, region: 'Asia', culture: 'east_asian', flag: '\uD83C\uDDE8\uD83C\uDDF3' },
@@ -112,9 +108,7 @@
     { code: 'SG', name: 'Singapore', pop: 5900000, incomeGroup: 'H', leM: 81.0, leF: 86.0, urban: 100, gdpPc: 82807, elec: 100, water: 100, sanit: 100, net: 94, fert: 1.0, region: 'Asia', culture: 'east_asian', flag: '\uD83C\uDDF8\uD83C\uDDEC' }
   ];
 
-  // ---------------------------------------------------------------------------
-  // 2. MODEL CONSTANTS: age bands / weights
-  // ---------------------------------------------------------------------------
+  // 2. model constants: age bands/weights
   var AGE_BANDS = [
     { min: 0, max: 4 },
     { min: 5, max: 14 },
@@ -131,9 +125,7 @@
     H: [0.050, 0.115, 0.115, 0.375, 0.145, 0.200]
   };
 
-  // ---------------------------------------------------------------------------
-  // 3. OCCUPATIONS
-  // ---------------------------------------------------------------------------
+  // 3. occupations
   var OCCUPATIONS = [
     // Agriculture
     { id: 'subsistence_farmer', name: 'Subsistence farmer', icon: '\uD83C\uDF3E', category: 'Agriculture', minAge: 15, maxAge: 74, weights: { L: 35, LM: 18, UM: 5, H: 0 }, incomeRatio: [0.12, 0.35], habitat: 'rural' },
@@ -171,9 +163,7 @@
     { id: 'homemaker', name: 'Homemaker / unpaid carer', icon: '\uD83C\uDFE0', category: 'Not employed', minAge: 18, maxAge: 70, weights: { L: 12, LM: 9, UM: 5, H: 3 }, incomeRatio: [0, 0], habitat: null }
   ];
 
-  // ---------------------------------------------------------------------------
-  // 4. HABITATION definitions (by income group)
-  // ---------------------------------------------------------------------------
+  // 4. habitation definitions (by income group)
   var HABITATION = {
     rural: {
       L: [['Mud / earthen home', 45], ['Basic rural house', 35], ['Traditional village house', 20]],
@@ -189,9 +179,7 @@
     }
   };
 
-  // ---------------------------------------------------------------------------
-  // 5. Reactive data-load status + loaders
-  // ---------------------------------------------------------------------------
+  // 5. reactive data load status + loaders
   var DATA_LOAD_STATUS = { source: 'static', message: 'Using built-in data', loading: false };
   var _countries = STATIC_COUNTRIES.slice();
   var CACHE_KEY = 'randomLife.countries.v3';
@@ -211,17 +199,10 @@
   };
 
   function wbUrl(indicator) {
-    // mrv=5 with a large page so sparse series (e.g. internet use, where the
-    // latest year is often still null) still resolve to the newest available
-    // value. Responses are newest-first, so the merge keeps the first hit.
     return 'https://api.worldbank.org/v2/country/all/indicator/' + indicator +
       '?format=json&mrv=5&per_page=1500';
   }
 
-  // World Bank returns 2-letter code in field row.country.id and 3-letter in countryiso3code.
-  // We build our merge map keyed by the 2-letter code to align with STATIC_COUNTRIES.code.
-  // With mrv>1 there are several rows per country (newest first): keep the
-  // newest non-null value for each country.
   function buildMapByIso2(json) {
     var map = {};
     if (!Array.isArray(json) || json.length < 2 || !Array.isArray(json[1])) return map;
@@ -309,7 +290,7 @@
   function loadData() {
     DATA_LOAD_STATUS.loading = true;
 
-    // 1. Try session cache first.
+    // 1. try session cache first...
     var cached = readCache();
     if (cached && cached.length) {
       _countries = cached;
@@ -319,7 +300,7 @@
       return Promise.resolve(_countries);
     }
 
-    // 2. Try live API.
+    // 2. try live api...
     return fetchLiveData().then(function (live) {
       if (live && live.length) {
         _countries = live;
@@ -350,7 +331,7 @@
     return STATIC_COUNTRIES;
   }
 
-  // Expose on namespace
+  // expose on namespace
   App.STATIC_COUNTRIES = STATIC_COUNTRIES;
   App.AGE_BANDS = AGE_BANDS;
   App.AGE_WEIGHTS = AGE_WEIGHTS;

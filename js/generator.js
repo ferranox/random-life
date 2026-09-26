@@ -1,13 +1,11 @@
-/* generator.js — random-person algorithm.
- * Classic script (no ES modules). Attaches to global App namespace.
- * Depends on: App.NAMES/generateName, App.AGE_BANDS, App.AGE_WEIGHTS,
- *             App.OCCUPATIONS, App.HABITATION, App.DATA_LOAD_STATUS.
+/* generator.js - random-person algorithm.
+ * Depends on: App.NAMES/generateName, App.AGE_BANDS, App.AGE_WEIGHTS, App.OCCUPATIONS, App.HABITATION, App.DATA_LOAD_STATUS.
  */
 (function (global) {
   'use strict';
   var App = global.App = global.App || {};
 
-  // --- helpers --------------------------------------------------------------
+  // helpers
   function randInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
@@ -43,18 +41,18 @@
     return weightsArr.length - 1;
   }
 
-  // --- Step 1: country (weighted by population) -----------------------------
+  // Step 1: country (weighted by population)
   function selectCountry(countries) {
     return weightedPick(countries, function (c) { return c.pop || 1; });
   }
 
-  // --- Step 2: sex ----------------------------------------------------------
+  // Step 2: sex
   function selectSex() {
     // Slight male majority at birth; use ~50.3 / 49.7.
     return Math.random() < 0.503 ? 'male' : 'female';
   }
 
-  // --- Step 3: age ----------------------------------------------------------
+  // Step 3: age
   function selectAge(incomeGroup) {
     var weights = App.AGE_WEIGHTS[incomeGroup] || App.AGE_WEIGHTS.LM;
     var idx = weightedIndex(weights);
@@ -62,9 +60,8 @@
     return randInt(band.min, band.max);
   }
 
-  // --- Step 4: occupation ---------------------------------------------------
-  // Returns a special string for students/retired/infants, otherwise an
-  // occupation object from App.OCCUPATIONS.
+  // Step 4: occupation
+  // Returns a special string for students/retired/infants, otherwise an occupation object from App.OCCUPATIONS.
   var SPECIAL = {
     infant: { name: 'N/A (infant / toddler)', icon: '\uD83C\uDF7C', category: 'Not applicable', special: 'infant' },
     student_school: { name: 'Student (primary / secondary school)', icon: '\uD83C\uDF92', category: 'Education', special: 'student' },
@@ -93,8 +90,6 @@
       return age >= o.minAge && age <= o.maxAge && (o.weights[ig] || 0) > 0;
     });
     if (!candidates.length) {
-      // No age-eligible occupation (typically 70+): retire rather than
-      // label an octogenarian as "seeking work".
       return SPECIAL.retired;
     }
     return weightedPick(candidates, function (o) {
@@ -102,7 +97,7 @@
       // Habitat bias
       if (o.habitat === 'urban') w *= isUrban ? 1.6 : 0.35;
       else if (o.habitat === 'rural') w *= isUrban ? 0.35 : 1.6;
-      // Gender bias: homemaker much rarer for males
+      // Gender bias
       if (o.id === 'homemaker' && sex === 'male') w *= 0.15;
       return w;
     }) || candidates[0];
@@ -135,7 +130,7 @@
     return pickWorkingOccupation(ig, isUrban, sex, age);
   }
 
-  // --- Step 5: income -------------------------------------------------------
+  // Step 5: income
   function calcIncome(country, occupation, age) {
     var medianRatio = { L: 0.28, LM: 0.38, UM: 0.45, H: 0.58 }[country.incomeGroup] || 0.4;
     var countryMedian = (country.gdpPc || 1000) * medianRatio;
@@ -164,7 +159,7 @@
     return Math.max(0, Math.round(countryMedian * pensionFactor));
   }
 
-  // --- Step 6: habitation ---------------------------------------------------
+  // Step 6: habitation
   function selectHabitation(isUrban, incomeGroup) {
     var set = App.HABITATION[isUrban ? 'urban' : 'rural'];
     var list = set[incomeGroup] || set.LM;
@@ -172,20 +167,13 @@
     return chosen ? chosen[0] : list[0][0];
   }
 
-  // --- Step 7: daily-life access (electricity / water / sanitation / net) ---
-  // Each is a national % with World Bank fallback + live merge. Individualise
-  // with a single coin flip so the person either has it or not, mirroring
-  // the national rate — much more visceral than a bare percentage.
+  // Step 7: daily-life access (electricity / water / sanitation / net)
   function selectHasAccess(pct) {
     if (pct == null || isNaN(pct)) return null;
     return Math.random() * 100 < pct;
   }
 
-  // --- Step 8: children -----------------------------------------------------
-  // Individualised number of children the person has had, weighted by the
-  // national fertility rate (children per woman) and the person's age.
-  // Under-18s have none; completed family size is approached by the mid-40s.
-  // A Poisson draw around the age-adjusted mean gives a realistic spread.
+  // Step 8: children
   function poissonSample(mean) {
     if (!(mean > 0)) return 0;
     var L = Math.exp(-mean);
@@ -211,7 +199,7 @@
     return poissonSample(fert * completion);
   }
 
-  // --- Assemble a person ----------------------------------------------------
+  // Make the person :)
   function generatePerson(countries) {
     if (!countries || !countries.length) {
       throw new Error('generatePerson: no countries available');

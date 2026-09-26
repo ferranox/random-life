@@ -6,9 +6,9 @@ Live site: https://random-life.ferranox.xyz/
 
 ## What it is
 
-Press **Generate Random Life** to create an entirely fictional person — country, age, sex, urban/rural habitat, occupation, income estimate, life expectancy, access to electricity / water / sanitation / internet, and number of children — with probabilities that mirror real global distributions.
+Press **Generate Random Life** to create an entirely fictional person - country, age, sex, urban/rural habitat, occupation, income estimate, life expectancy, access to electricity / water / sanitation / internet, and number of children - with probabilities that match real global distributions.
 
-No build step, no backend. Static HTML/CSS/JS (`index.html` + `js/`), works offline once loaded.
+No backend. Static HTML/CSS/JS - works offline once loaded.
 
 ## How it works
 
