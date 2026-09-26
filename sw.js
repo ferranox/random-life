@@ -2,7 +2,7 @@
  * Cache-first for static assets, network-first (with cache fallback) for the
  * World Bank API. Uses relative URLs so it works from any deployment path.
  */
-var CACHE_NAME = 'random-life-v11';
+var CACHE_NAME = 'random-life-v12';
 var STATIC_ASSETS = [
   './',
   './index.html',
