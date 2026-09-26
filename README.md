@@ -2,7 +2,7 @@
 
 Generate a statistically plausible fictional person from anywhere on Earth.
 
-Live site: https://random-life.ferranox.xyz/
+Live site: https://randomlife.fyi/
 
 ## What it is
 
