@@ -26,23 +26,15 @@
   }
 
   function attrRow(label, value) {
-    var row = doc.createElement('div');
-    row.className = 'attr-row';
-    var dt = doc.createElement('dt');
-    dt.className = 'attr-label';
-    dt.textContent = label;
-    var dd = doc.createElement('dd');
-    dd.className = 'attr-value';
-    dd.textContent = value;
-    row.appendChild(dt);
-    row.appendChild(dd);
+    var row = doc.createElement('tr');
+    var th = doc.createElement('th');
+    th.setAttribute('scope', 'row');
+    th.textContent = label;
+    var td = doc.createElement('td');
+    td.textContent = value;
+    row.appendChild(th);
+    row.appendChild(td);
     return row;
-  }
-
-  function dataSourceBadge(source) {
-    if (source === 'live') return 'Live data (World Bank)';
-    if (source === 'cached') return 'Cached data (World Bank)';
-    return 'Built-in data';
   }
 
   function renderProfile(person) {
@@ -107,17 +99,8 @@
       els.attributes.appendChild(attrRow('Internet', netVal));
     }
 
-    // Footer note
-    els.dataSourceNote.textContent = dataSourceBadge(person.dataSource);
-
-    // Reveal with animation
+    // Reveal the profile card.
     els.profileSection.hidden = false;
-    els.profileCard.classList.remove('revealed');
-    global.requestAnimationFrame(function () {
-      global.requestAnimationFrame(function () {
-        els.profileCard.classList.add('revealed');
-      });
-    });
 
     // Move focus to the profile card for accessibility.
     els.profileCard.setAttribute('tabindex', '-1');
@@ -128,7 +111,12 @@
     [els.generateBtn, els.regenerateBtn].forEach(function (btn) {
       if (!btn) return;
       btn.disabled = isLoading;
-      btn.classList.toggle('is-loading', isLoading);
+      // Pico CSS renders a spinner for aria-busy buttons (see Loading docs).
+      if (isLoading) {
+        btn.setAttribute('aria-busy', 'true');
+      } else {
+        btn.removeAttribute('aria-busy');
+      }
     });
   }
 
@@ -181,13 +169,12 @@
     els.generateBtn = $('generate-btn');
     els.regenerateBtn = $('regenerate-btn');
     els.profileSection = $('profile-section');
-    els.profileCard = doc.querySelector('.profile-card');
-    els.name = doc.querySelector('.person-name');
-    els.ageGender = doc.querySelector('.person-age-gender');
-    els.countryFlag = doc.querySelector('.country-flag');
-    els.countryName = doc.querySelector('.country-name');
-    els.attributes = doc.querySelector('.profile-attributes');
-    els.dataSourceNote = doc.querySelector('.data-source-note');
+    els.profileCard = $('profile-card');
+    els.name = $('person-name');
+    els.ageGender = $('person-age-gender');
+    els.countryFlag = $('country-flag');
+    els.countryName = $('country-name');
+    els.attributes = $('profile-attributes');
     els.dataStatus = $('data-status');
     els.infoBtn = $('info-btn');
     els.infoDialog = $('info-dialog');
@@ -199,8 +186,10 @@
 
     if (els.infoBtn) els.infoBtn.addEventListener('click', openDialog);
     if (els.infoDialog) {
-      var closeBtn = els.infoDialog.querySelector('.dialog-close');
-      if (closeBtn) closeBtn.addEventListener('click', closeDialog);
+      var closeBtns = els.infoDialog.querySelectorAll('.dialog-close');
+      Array.prototype.forEach.call(closeBtns, function (closeBtn) {
+        closeBtn.addEventListener('click', closeDialog);
+      });
       // Click on backdrop closes.
       els.infoDialog.addEventListener('click', function (e) {
         if (e.target === els.infoDialog) closeDialog();

@@ -2,14 +2,12 @@
  * Cache-first for static assets, network-first (with cache fallback) for the
  * World Bank API. Uses relative URLs so it works from any deployment path.
  */
-var CACHE_NAME = 'random-life-v10';
+var CACHE_NAME = 'random-life-v11';
 var STATIC_ASSETS = [
   './',
   './index.html',
-  './style.css',
   './manifest.webmanifest',
   './favicon.ico',
-  './js/theme.js',
   './js/names.js',
   './js/data.js',
   './js/generator.js',
@@ -17,7 +15,8 @@ var STATIC_ASSETS = [
   './js/app.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  './icons/apple-touch-icon.png'
+  './icons/apple-touch-icon.png',
+  'https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css'
 ];
 
 self.addEventListener('install', function (e) {
