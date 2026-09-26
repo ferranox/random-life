@@ -2,7 +2,7 @@
  * Cache-first for static assets, network-first (with cache fallback) for the
  * World Bank API. Uses relative URLs so it works from any deployment path.
  */
-var CACHE_NAME = 'random-life-v13';
+var CACHE_NAME = 'random-life-v14';
 var STATIC_ASSETS = [
   './',
   './index.html',
@@ -45,6 +45,17 @@ self.addEventListener('activate', function (e) {
 self.addEventListener('fetch', function (e) {
   var req = e.request;
   if (req.method !== 'GET') return;
+
+  // Useful redirect javascript
+  try {
+    if (new URL(req.url).hostname === 'random-life.ferranox.xyz') {
+      e.respondWith(Response.redirect(
+        'https://randomlife.fyi' + new URL(req.url).pathname + new URL(req.url).search + new URL(req.url).hash,
+        301
+      ));
+      return;
+    }
+  } catch (err) { /* fall through to normal handling */ }
 
   if (req.url.indexOf('api.worldbank.org') !== -1) {
     // Network first, fall back to cache.

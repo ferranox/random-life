@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>
+    // Useful redirect javascript
+    (function () {
+      if (window.location.hostname === 'random-life.ferranox.xyz') {
+        var target = 'https://randomlife.fyi' + window.location.pathname + window.location.search + window.location.hash;
+        window.location.replace(target);
+      }
+    })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
