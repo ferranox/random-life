@@ -1,4 +1,4 @@
-/* app.js - the beginning,
+/* app.js - boot:
  * 1. Register the service worker
  * 2. Load data
  * 3. Wire up the ui

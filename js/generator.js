@@ -1,5 +1,5 @@
 /* generator.js - random-person algorithm.
- * Depends on: App.NAMES/generateName, App.AGE_BANDS, App.AGE_WEIGHTS, App.OCCUPATIONS, App.HABITATION, App.DATA_LOAD_STATUS.
+ * Depends on: App.generateName, App.AGE_BANDS, App.AGE_WEIGHTS, App.OCCUPATIONS, App.HABITATION, App.DATA_LOAD_STATUS.
  */
 (function (global) {
   'use strict';
@@ -46,9 +46,10 @@
     return weightedPick(countries, function (c) { return c.pop || 1; });
   }
 
-  // Step 2: sex
-  function selectSex() {
-    // Slight male majority at birth; use ~50.3 / 49.7.
+  // Step 2: sex (country's female share when available, else ~50.3 / 49.7)
+  function selectSex(country) {
+    var f = country ? Number(country.femaleShare) : NaN;
+    if (f > 5 && f < 95) return Math.random() < (100 - f) / 100 ? 'male' : 'female';
     return Math.random() < 0.503 ? 'male' : 'female';
   }
 
@@ -91,7 +92,9 @@
   }
 
   // Step 4: occupation
-  // Returns a special string for students/retired/infants, otherwise an occupation object from App.OCCUPATIONS.
+  // Returns a special entry for students/retired/infants, otherwise an
+  // occupation object from App.OCCUPATIONS. Income-group weights are refined
+  // per country with live sector-employment shares and the unemployment rate.
   var SPECIAL = {
     infant: { name: 'N/A (infant / toddler)', icon: '\uD83C\uDF7C', category: 'Not applicable', special: 'infant' },
     student_school: { name: 'Student (primary / secondary school)', icon: '\uD83C\uDF92', category: 'Education', special: 'student' },
@@ -115,7 +118,7 @@
     return (table[ig] != null) ? table[ig] : 0.30;
   }
 
-  function pickWorkingOccupation(ig, isUrban, sex, age) {
+  function pickWorkingOccupation(country, ig, isUrban, sex, age) {
     var candidates = App.OCCUPATIONS.filter(function (o) {
       return age >= o.minAge && age <= o.maxAge && (o.weights[ig] || 0) > 0;
     });
@@ -127,13 +130,35 @@
       // Habitat bias
       if (o.habitat === 'urban') w *= isUrban ? 1.6 : 0.35;
       else if (o.habitat === 'rural') w *= isUrban ? 0.35 : 1.6;
+      // Country sector mix (live ILO-modelled shares): scale each employed
+      // occupation by its sector's share of national employment, normalised
+      // so the average factor is ~1 (shares sum to ~100).
+      if (o.category !== 'Not employed') w *= sectorFactor(country, sectorOf(o));
+      // Country unemployment rate: scale the unemployed weight against a ~6%
+      // global-average baseline.
+      if (o.id === 'unemployed') {
+        var u = country ? Number(country.unemp) : NaN;
+        if (u > 0) w *= Math.min(4, Math.max(0.3, u / 6));
+      }
       // Gender bias
       if (o.id === 'homemaker' && sex === 'male') w *= 0.15;
       return w;
     }) || candidates[0];
   }
 
-  function selectOccupation(ig, age, isUrban, sex) {
+  function sectorOf(occupation) {
+    if (occupation.category === 'Agriculture') return 'agr';
+    if (occupation.category === 'Industry') return 'ind';
+    return 'srv';
+  }
+
+  function sectorFactor(country, sector) {
+    var share = country ? Number(country[sector + 'Share']) : NaN;
+    if (!(share > 0)) return 1;
+    return Math.min(2.5, Math.max(0.15, (3 * share) / 100));
+  }
+
+  function selectOccupation(country, ig, age, isUrban, sex) {
     if (age <= 4) return SPECIAL.infant;
 
     if (age >= 5 && age <= 14) {
@@ -143,27 +168,33 @@
 
     if (age >= 15 && age <= 17) {
       if (Math.random() < studentShare(ig, '15_17')) return SPECIAL.student_school;
-      return pickWorkingOccupation(ig, isUrban, sex, age);
+      return pickWorkingOccupation(country, ig, isUrban, sex, age);
     }
 
     if (age >= 18 && age <= 24) {
       if (Math.random() < studentShare(ig, '18_24')) return SPECIAL.student;
-      return pickWorkingOccupation(ig, isUrban, sex, age);
+      return pickWorkingOccupation(country, ig, isUrban, sex, age);
     }
 
     if (age >= 65) {
       if (Math.random() < retiredShare(ig)) return SPECIAL.retired;
-      return pickWorkingOccupation(ig, isUrban, sex, age);
+      return pickWorkingOccupation(country, ig, isUrban, sex, age);
     }
 
     // 25-64
-    return pickWorkingOccupation(ig, isUrban, sex, age);
+    return pickWorkingOccupation(country, ig, isUrban, sex, age);
   }
 
   // Step 5: income
-  function calcIncome(country, occupation, age) {
+  // Typical (median) personal income, approximated as a share of GDP per
+  // capita that rises with income group.
+  function medianIncome(country) {
     var medianRatio = { L: 0.28, LM: 0.38, UM: 0.45, H: 0.58 }[country.incomeGroup] || 0.4;
-    var countryMedian = (country.gdpPc || 1000) * medianRatio;
+    return (country.gdpPc || 1000) * medianRatio;
+  }
+
+  function calcIncome(country, occupation, age) {
+    var countryMedian = medianIncome(country);
 
     var range = occupation.incomeRatio || [0, 0];
     var lo = range[0], hi = range[1];
@@ -183,8 +214,7 @@
   }
 
   function retirementIncome(country) {
-    var medianRatio = { L: 0.28, LM: 0.38, UM: 0.45, H: 0.58 }[country.incomeGroup] || 0.4;
-    var countryMedian = (country.gdpPc || 1000) * medianRatio;
+    var countryMedian = medianIncome(country);
     var pensionFactor = 0.30 + Math.random() * 0.20; // 30-50%
     return Math.max(0, Math.round(countryMedian * pensionFactor));
   }
@@ -237,11 +267,12 @@
 
     var country = selectCountry(countries);
     var ig = country.incomeGroup;
-    var sex = selectSex();
+    var sex = selectSex(country);
     var age = selectAge(country);
-    var isUrban = Math.random() < ((country.urban || 50) / 100);
+    var urbanPct = country.urban != null ? country.urban : 50;
+    var isUrban = Math.random() < (urbanPct / 100);
 
-    var occupation = selectOccupation(ig, age, isUrban, sex);
+    var occupation = selectOccupation(country, ig, age, isUrban, sex);
 
     // Income determination
     var income;

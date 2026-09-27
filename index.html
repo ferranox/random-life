@@ -118,13 +118,13 @@
 
       <h3>Data sources</h3>
       <ul>
-        <li><strong>World Bank Open Data</strong> - population, life expectancy (male and female), urbanisation rate, GDP per capita, electricity access, basic drinking water, basic sanitation, internet use, fertility rate, and age structure (share aged 0-14 and 65+).</li>
+        <li><strong>World Bank Open Data</strong> - country list, income group, and region, plus population, life expectancy (male and female), urbanisation rate, GDP per capita, electricity access, basic drinking water, basic sanitation, internet use, fertility rate, age structure (share aged 0-14 and 65+), sex split (female share of population), employment mix (share in agriculture / industry / services), and unemployment rate.</li>
         <li><strong>UN Population Division</strong> - the age-structure figures rest on its World Population Prospects, and it informs the within-income-group age splits.</li>
-        <li><strong>International Labour Organization (ILO)</strong> - reference for the employment categories and occupation mix.</li>
+        <li><strong>International Labour Organization (ILO)</strong> - reference for the employment categories and occupation mix; the per-country sector shares and unemployment rates are its ILO-modelled estimates published via the World Bank.</li>
       </ul>
 
       <h3>Live data</h3>
-      <p>When online, the app fetches the most recent value (<code>mrv=5</code>, newest available kept) for these World Bank indicators and merges them over the built-in dataset:</p>
+      <p>When online, the app fetches the country list (names, income groups, regions - so new and changed countries appear with no manual update) and the most recent value (<code>mrv=5</code>, newest available kept) for these World Bank indicators, merging them over the built-in fallback dataset:</p>
       <ul>
         <li><code>SP.POP.TOTL</code> - total population</li>
         <li><code>SP.DYN.LE00.MA.IN</code> - life expectancy at birth, male</li>
@@ -138,19 +138,25 @@
         <li><code>SP.DYN.TFRT.IN</code> - fertility rate (births per woman)</li>
         <li><code>SP.POP.0014.TO.ZS</code> - population ages 0-14 (% of total)</li>
         <li><code>SP.POP.65UP.TO.ZS</code> - population ages 65+ (% of total)</li>
+        <li><code>SP.POP.TOTL.FE.ZS</code> - population, female (% of total)</li>
+        <li><code>SL.AGR.EMPL.ZS</code> - employment in agriculture (% of total employment)</li>
+        <li><code>SL.IND.EMPL.ZS</code> - employment in industry (% of total employment)</li>
+        <li><code>SL.SRV.EMPL.ZS</code> - employment in services (% of total employment)</li>
+        <li><code>SL.UEM.TOTL.ZS</code> - unemployment (% of total labour force)</li>
       </ul>
-      <p>Results are cached in your browser session so they are not re-fetched on every reload. If the API is unavailable, the app falls back to cached and then built-in data.</p>
+      <p>Flags are derived from country codes and need no data source. Results are cached in your browser (refreshed every 12 hours) so they are not re-fetched on every reload. If the API is unavailable, the app falls back to cached and then built-in data.</p>
 
       <h3>Methodology</h3>
       <ul>
-        <li><strong>Country</strong> - picked at random, weighted by population, so bigger countries turn up more often.</li>
+        <li><strong>Country</strong> - picked at random from all World Bank members (plus Taiwan), weighted by live population, so bigger countries turn up more often.</li>
+        <li><strong>Sex</strong> - drawn from the country's female share of the population.</li>
         <li><strong>Age</strong> - drawn from age bands fitted to the country's own share of children (0-14) and older people (65+), with the gaps filled in from its income-group pattern.</li>
         <li><strong>Urban vs. rural</strong> - decided by the country's urbanisation rate.</li>
-        <li><strong>Occupation</strong> - sampled from a list weighted by income group and habitat, limited to plausible working ages, with student and retirement shares that differ by income group.</li>
+        <li><strong>Occupation</strong> - sampled from a list weighted by income group and habitat, refined per country by its employment mix (agriculture / industry / services) and unemployment rate, limited to plausible working ages, with student and retirement shares that differ by income group.</li>
         <li><strong>Income</strong> - estimated from GDP per capita, an occupation multiplier, an age adjustment, plus some random variation. A rough figure in nominal USD, not PPP.</li>
-        <li><strong>Life expectancy</strong> - the national average for the person's sex.</li>
-        <li><strong>Electricity, drinking water, sanitation, and internet</strong> - the person either has it or not, drawn from the national rate (a country with 63% electricity access gives each person a 63% chance). The national rate is shown alongside.</li>
-        <li><strong>Children</strong> - drawn from the national fertility rate and adjusted for age: under-18s have none, and completed family size is approached by the mid-40s. The national average is shown alongside.</li>
+        <li><strong>Life expectancy</strong> - the national average at birth for the person's sex.</li>
+        <li><strong>Electricity, drinking water, sanitation, and internet</strong> - the person either has it or not, drawn from the national rate (a country with 63% electricity access gives each person a 63% chance).</li>
+        <li><strong>Children</strong> - drawn from the national fertility rate and adjusted for age: under-18s have none, and completed family size is approached by the mid-40s.</li>
       </ul>
 
       <h3>Limitations</h3>

@@ -1,7 +1,9 @@
-/* data.js - fallback dataset, world bank live fetcher, and model constants
- * Data sources (approximate 2023-2024 figures; age structure ~2025):
+/* data.js - country dataset, world bank live fetcher, and model constants
+ * Data sources (static values are approximate 2023-2024 fallbacks only):
+ *   - Country list, income group, region: World Bank country metadata (live),
+ *     with the static table as fallback. Taiwan (non-WB-member) is kept as a
+ *     static supplement.
  *   - Population: World Bank SP.POP.TOTL / UN estimates
- *   - Income group: World Bank classification (L, LM, UM, H)
  *   - Life expectancy: World Bank SP.DYN.LE00.MA.IN / .FE.IN
  *   - Urbanisation: World Bank SP.URB.TOTL.IN.ZS
  *   - GDP per capita (USD): World Bank NY.GDP.PCAP.CD
@@ -13,8 +15,12 @@
  *   - Age structure (% ages 0-14 / 65+ of total): World Bank SP.POP.0014.TO.ZS /
  *     SP.POP.65UP.TO.ZS (UN World Population Prospects based, updated annually).
  *     Per-country young/old shares anchor the 6-band age model; within-band
- *     splits follow the income-group pattern. Taiwan (non-WB-member) keeps a
- *     static estimate and falls back to the income-group model.
+ *     splits follow the income-group pattern.
+ *   - Sex split (% female): World Bank SP.POP.TOTL.FE.ZS
+ *   - Employment mix (% in agriculture / industry / services) and unemployment
+ *     rate: World Bank SL.AGR.EMPL.ZS / SL.IND.EMPL.ZS / SL.SRV.EMPL.ZS /
+ *     SL.UEM.TOTL.ZS (ILO-modelled estimates).
+ *   - Flags are derived from the ISO code, so no per-country flag data is kept.
  */
 (function (global) {
   'use strict';
@@ -113,7 +119,37 @@
     { code: 'SG', name: 'Singapore', pop: 5900000, incomeGroup: 'H', leM: 81.0, leF: 86.0, urban: 100, gdpPc: 82807, elec: 100, water: 100, sanit: 100, net: 94, fert: 1.0, age014: 11.7, age65: 14.2, region: 'Asia', culture: 'east_asian', flag: '\uD83C\uDDF8\uD83C\uDDEC' }
   ];
 
-  // 2. model constants: age bands/weights
+  // 2. static fallback values, keyed by ISO2 (used offline and to fill gaps
+  // the World Bank does not cover: display names, name cultures, Taiwan).
+  var STATIC_BY_CODE = {};
+  STATIC_COUNTRIES.forEach(function (c) { STATIC_BY_CODE[c.code] = c; });
+
+  // World Bank income Level id -> our income group.
+  var INCOME_MAP = { LIC: 'L', LMC: 'LM', UMC: 'UM', HIC: 'H' };
+
+  // Flag emoji derived from any ISO2 code - no per-country flag data needed.
+  function flagEmoji(iso2) {
+    if (typeof iso2 !== 'string' || !/^[A-Za-z]{2}$/.test(iso2)) return '';
+    var up = iso2.toUpperCase();
+    return String.fromCodePoint(up.charCodeAt(0) + 127397, up.charCodeAt(1) + 127397);
+  }
+
+  // Illustrative name culture for live-only countries (those without a static
+  // entry), inferred from the World Bank region. ECS uses income as a tiebreak.
+  function cultureForRegion(regionId, incomeGroup) {
+    switch (regionId) {
+      case 'SAS': return 'south_asian';
+      case 'SSF': return 'sub_saharan';
+      case 'LCN': return 'latin_american';
+      case 'MEA': return 'arab_middle_east';
+      case 'EAS': return 'southeast_asian';
+      case 'NAC': return 'north_american_oceanian';
+      case 'ECS': return incomeGroup === 'H' ? 'west_european' : 'east_european';
+      default: return 'north_american_oceanian';
+    }
+  }
+
+  // 3. model constants: age bands/weights
   var AGE_BANDS = [
     { min: 0, max: 4 },
     { min: 5, max: 14 },
@@ -130,7 +166,7 @@
     H: [0.050, 0.115, 0.115, 0.375, 0.145, 0.200]
   };
 
-  // 3. occupations
+  // 4. occupations
   var OCCUPATIONS = [
     // Agriculture
     { id: 'subsistence_farmer', name: 'Subsistence farmer', icon: '\uD83C\uDF3E', category: 'Agriculture', minAge: 15, maxAge: 74, weights: { L: 35, LM: 18, UM: 5, H: 0 }, incomeRatio: [0.12, 0.35], habitat: 'rural' },
@@ -168,7 +204,7 @@
     { id: 'homemaker', name: 'Homemaker / unpaid carer', icon: '\uD83C\uDFE0', category: 'Not employed', minAge: 18, maxAge: 70, weights: { L: 12, LM: 9, UM: 5, H: 3 }, incomeRatio: [0, 0], habitat: null }
   ];
 
-  // 4. habitation definitions (by income group)
+  // 5. habitation definitions (by income group)
   var HABITATION = {
     rural: {
       L: [['Mud / earthen home', 45], ['Basic rural house', 35], ['Traditional village house', 20]],
@@ -184,10 +220,10 @@
     }
   };
 
-  // 5. reactive data load status + loaders
+  // 6. reactive data load status + loaders
   var DATA_LOAD_STATUS = { source: 'static', message: 'Using built-in data', loading: false };
   var _countries = STATIC_COUNTRIES.slice();
-  var CACHE_KEY = 'randomLife.countries.v4';
+  var CACHE_KEY = 'randomLife.countries.v5';
   var CACHE_TTL = 1000 * 60 * 60 * 12; // 12 hours
 
   var WB_INDICATORS = {
@@ -202,7 +238,12 @@
     net: 'IT.NET.USER.ZS',
     fert: 'SP.DYN.TFRT.IN',
     age014: 'SP.POP.0014.TO.ZS',
-    age65: 'SP.POP.65UP.TO.ZS'
+    age65: 'SP.POP.65UP.TO.ZS',
+    femaleShare: 'SP.POP.TOTL.FE.ZS',
+    agrShare: 'SL.AGR.EMPL.ZS',
+    indShare: 'SL.IND.EMPL.ZS',
+    srvShare: 'SL.SRV.EMPL.ZS',
+    unemp: 'SL.UEM.TOTL.ZS'
   };
 
   function wbUrl(indicator) {
@@ -230,11 +271,74 @@
     });
   }
 
+  function fetchCountryMeta() {
+    return fetch('https://api.worldbank.org/v2/country?format=json&per_page=300').then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    }).then(function (json) {
+      if (!Array.isArray(json) || !Array.isArray(json[1])) return [];
+      return json[1].filter(function (c) {
+        return c && typeof c.iso2Code === 'string' && /^[A-Za-z]{2}$/.test(c.iso2Code) &&
+          c.region && c.region.id !== 'NA';
+      });
+    });
+  }
+
+  // Base country list: every World Bank member from live metadata (name,
+  // income group, region) overlaid on static fallback values, so newly added
+  // or changed countries appear without any manual update. Falls back to the
+  // static table when the metadata request fails.
+  function baseCountries(metaList) {
+    function copyStatic(c) {
+      var copy = {};
+      for (var p in c) { if (Object.prototype.hasOwnProperty.call(c, p)) copy[p] = c[p]; }
+      return copy;
+    }
+    if (!metaList || !metaList.length) return STATIC_COUNTRIES.map(copyStatic);
+    var seen = {};
+    var list = metaList.map(function (m) {
+      var code = m.iso2Code.toUpperCase();
+      var known = STATIC_BY_CODE[code];
+      var incomeGroup = (m.incomeLevel && INCOME_MAP[m.incomeLevel.id]) ||
+        (known && known.incomeGroup) || 'LM';
+      var base = known ? copyStatic(known) : {
+        pop: 0, leM: null, leF: null, urban: null, gdpPc: null,
+        elec: null, water: null, sanit: null, net: null, fert: null,
+        age014: null, age65: null, femaleShare: null,
+        agrShare: null, indShare: null, srvShare: null, unemp: null
+      };
+      base.code = code;
+      base.name = (known && known.name) || m.name;
+      base.incomeGroup = incomeGroup;
+      base.region = (known && known.region) ||
+        (m.region && m.region.value ? m.region.value.trim() : 'Unknown');
+      base.culture = (known && known.culture) ||
+        cultureForRegion(m.region && m.region.id, incomeGroup);
+      base.flag = flagEmoji(code);
+      seen[code] = true;
+      return base;
+    });
+    // Taiwan is not a World Bank member - keep its static estimate.
+    if (!seen.TW && STATIC_BY_CODE.TW) list.push(copyStatic(STATIC_BY_CODE.TW));
+    return list;
+  }
+
   function fetchLiveData() {
     var keys = Object.keys(WB_INDICATORS);
     var promises = keys.map(function (k) { return fetchIndicatorRaw(WB_INDICATORS[k]); });
+    promises.push(fetchCountryMeta().then(function (m) { return { meta: m }; },
+      function (err) {
+        console.warn('World Bank country list failed:', err && err.message);
+        return { meta: [] };
+      }));
 
     return Promise.allSettled(promises).then(function (results) {
+      var metaList = [];
+      var metaRes = results[results.length - 1];
+      if (metaRes.status === 'fulfilled' && metaRes.value && metaRes.value.meta) {
+        metaList = metaRes.value.meta;
+      }
+      results = results.slice(0, keys.length);
       var maps = {};
       var anyOk = false;
       results.forEach(function (r, i) {
@@ -250,7 +354,7 @@
 
       if (!anyOk) return null;
 
-      var merged = STATIC_COUNTRIES.map(function (c) {
+      var merged = baseCountries(metaList).map(function (c) {
         var copy = {};
         for (var p in c) { if (Object.prototype.hasOwnProperty.call(c, p)) copy[p] = c[p]; }
         var code = c.code;
@@ -266,8 +370,16 @@
         if (maps.fert && maps.fert[code] != null) copy.fert = Math.round(maps.fert[code] * 10) / 10;
         if (maps.age014 && maps.age014[code] != null) copy.age014 = Math.round(maps.age014[code] * 10) / 10;
         if (maps.age65 && maps.age65[code] != null) copy.age65 = Math.round(maps.age65[code] * 10) / 10;
+        if (maps.femaleShare && maps.femaleShare[code] != null) copy.femaleShare = Math.round(maps.femaleShare[code] * 10) / 10;
+        if (maps.agrShare && maps.agrShare[code] != null) copy.agrShare = Math.round(maps.agrShare[code]);
+        if (maps.indShare && maps.indShare[code] != null) copy.indShare = Math.round(maps.indShare[code]);
+        if (maps.srvShare && maps.srvShare[code] != null) copy.srvShare = Math.round(maps.srvShare[code]);
+        if (maps.unemp && maps.unemp[code] != null) copy.unemp = Math.round(maps.unemp[code] * 10) / 10;
         return copy;
       });
+      // Drop entries with no usable population (unknown microstates / gaps).
+      merged = merged.filter(function (c) { return c.pop > 0; });
+      if (!merged.length) return null;
       return merged;
     }).catch(function (err) {
       console.warn('fetchLiveData failed:', err && err.message);
@@ -275,9 +387,18 @@
     });
   }
 
+  // Persistent cache (localStorage, with sessionStorage fallback) so live
+  // values survive reloads and work offline via the service worker.
+  function storage() {
+    try { if (global.localStorage) return global.localStorage; } catch (e) { /* unavailable */ }
+    try { if (global.sessionStorage) return global.sessionStorage; } catch (e) { /* unavailable */ }
+    return null;
+  }
+
   function readCache() {
     try {
-      var raw = global.sessionStorage && global.sessionStorage.getItem(CACHE_KEY);
+      var store = storage();
+      var raw = store && store.getItem(CACHE_KEY);
       if (!raw) return null;
       var parsed = JSON.parse(raw);
       if (!parsed || !parsed.ts || !Array.isArray(parsed.countries)) return null;
@@ -290,16 +411,15 @@
 
   function writeCache(countries) {
     try {
-      if (global.sessionStorage) {
-        global.sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), countries: countries }));
-      }
+      var store = storage();
+      if (store) store.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), countries: countries }));
     } catch (e) { /* storage may be unavailable (private mode / file://) */ }
   }
 
   function loadData() {
     DATA_LOAD_STATUS.loading = true;
 
-    // 1. try session cache first...
+    // 1. try persistent cache first...
     var cached = readCache();
     if (cached && cached.length) {
       _countries = cached;
@@ -347,6 +467,8 @@
   App.OCCUPATIONS = OCCUPATIONS;
   App.HABITATION = HABITATION;
   App.DATA_LOAD_STATUS = DATA_LOAD_STATUS;
+  App.flagEmoji = flagEmoji;
+  App.cultureForRegion = cultureForRegion;
   App.fetchLiveData = fetchLiveData;
   App.loadData = loadData;
   App.getCountries = getCountries;
