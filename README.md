@@ -59,19 +59,6 @@ database is involved: the 8-hex-char **seed** in the URL fully determines the li
    dataset when available, so a seed is exactly reproducible given the same dataset;
    dataset revisions may shift probabilities slightly (the RNG sequence itself is stable).
 
-## Static-asset versioning (read before deploying)
-
-All local CSS/JS/manifest/icon URLs carry `?v=<N>` (currently 20), mirrored in the
-service-worker's precache list. The HTML page and its scripts must always deploy as a
-set: a new `index.html` paired with a stale cached `ui.js` once left the Share button
-completely dead with no error. The version query makes that impossible - a new page
-always fetches matching assets (browser, Cloudflare edge and service-worker caches all
-key on the full URL). Rule: **whenever any static asset changes, bump the version in
-`index.html`, `404.html` and `sw.js` (including `CACHE_NAME`) together.** As a backstop,
-`App.checkScriptVersions()` warns loudly in `#data-status` (and hides Share) if scripts
-ever do mix. After pushing, consider a one-time Cloudflare cache purge so the new
-`index.html` (which references the new URLs) converges everywhere immediately.
-
 ## Limitations
 
 - Income figures are rough estimates in nominal USD - not adjusted for local purchasing power (PPP).

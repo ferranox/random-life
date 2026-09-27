@@ -23,11 +23,9 @@ class SpaFallbackHandler(http.server.SimpleHTTPRequestHandler):
 
     def end_headers(self):
         # Never cache during development so edits show up immediately.
-        # (Split off any ?v= cache-busting query before checking the type.)
-        clean_path = self.path.split("?", 1)[0].split("#", 1)[0]
-        if clean_path.endswith(
+        if self.path.split("?", 1)[0].split("#", 1)[0].endswith(
             (".html", ".js", ".css", ".webmanifest")
-        ) or clean_path.startswith("/life/"):
+        ) or self.path.startswith("/life/"):
             self.send_header("Cache-Control", "no-store")
         super().end_headers()
 
