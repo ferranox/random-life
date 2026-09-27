@@ -1,11 +1,14 @@
 {
-  "name": "Random Life",
+  "id": "./",
+  "name": "Random Life Generator",
   "short_name": "Random Life",
-  "description": "Generate a statistically plausible fictional person from anywhere on Earth",
+  "description": "Free random life generator: create a statistically plausible fictional person from anywhere on Earth",
+  "lang": "en",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
   "orientation": "any",
+  "categories": ["entertainment", "education"],
   "theme_color": "#ffffff",
   "background_color": "#ffffff",
   "icons": [
