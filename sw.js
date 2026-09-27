@@ -2,7 +2,7 @@
  * Cache-first for static assets, network-first (with cache fallback) for the
  * World Bank API. Uses relative URLs so it works from any deployment path.
  */
-var CACHE_NAME = 'random-life-v18';
+var CACHE_NAME = 'random-life-v19';
 var STATIC_ASSETS = [
   './',
   './index.html',
@@ -13,6 +13,7 @@ var STATIC_ASSETS = [
   './manifest.webmanifest',
   './favicon.ico',
   './icon.svg',
+  './js/seed.js',
   './js/names.js',
   './js/data.js',
   './js/generator.js',
@@ -58,6 +59,26 @@ self.addEventListener('fetch', function (e) {
         caches.open(CACHE_NAME).then(function (c) { c.put(req, copy); });
         return res;
       }).catch(function () { return caches.match(req); })
+    );
+    return;
+  }
+
+  // Client-side share routes (/life/v1/<seed>) have no physical file: serve
+  // the app shell so JavaScript can render the seeded life. This only helps
+  // once the service worker is installed (i.e. return visits); first visits
+  // still rely on the server fallback (see dev-server.py / Caddy note).
+  // Other navigation misses (genuinely unknown pages) keep the default
+  // behaviour below so the server's 404 page still shows.
+  if (req.mode === 'navigate' && new URL(req.url).pathname.indexOf('/life/') === 0) {
+    e.respondWith(
+      fetch(req).then(function (res) {
+        if (res && res.status === 200) {
+          var copy = res.clone();
+          caches.open(CACHE_NAME).then(function (c) { c.put(req, copy); });
+          return res;
+        }
+        return caches.match('./index.html');
+      }).catch(function () { return caches.match('./index.html'); })
     );
     return;
   }

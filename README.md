@@ -30,6 +30,35 @@ No backend. Static HTML/CSS/JS - works offline once loaded.
 
 When online, the app uses the latest available World Bank values for the above indicators and caches them for 12 hours, falling back to built-in data when offline. Flags are derived from country codes and need no data source.
 
+## Shareable lives (seeded generation)
+
+Every generated life has a permanent URL like `https://randomlife.fyi/life/v1/7f3a2c91`.
+Opening it later, on any device, reproduces the exact same life. No backend or
+database is involved: the 8-hex-char **seed** in the URL fully determines the life.
+
+1. **How it works** - `createSeed()` (crypto-backed) makes a seed; `createSeededRng(seed)`
+   (xmur3 + mulberry32 in `js/seed.js`, pure integer math so it is identical in every
+   browser) builds a deterministic PRNG; `generateLife(seed)` in `js/generator.js` runs
+   the normal generation algorithm using only that PRNG. All weighted picks, ages,
+   incomes, names, etc. draw from it - the seeded path never touches `Math.random()`.
+2. **The seed** - a 32-bit value rendered as 8 lowercase hex chars (e.g. `7f3a2c91`).
+   `getLifeUrl(seed)` builds the canonical path; `parseLifeUrl()` validates URL input
+   (invalid seeds are rejected, never executed).
+3. **URL format** - `/life/v1/<seed>`. `v1` pins the generation algorithm/data version;
+   future incompatible changes ship as `v2` with the v1 code kept, so old links survive.
+4. **No backend needed** - generation is 100% client-side; the URL *is* the identifier.
+   Nothing is stored anywhere (History/Saved lists are local browser state only).
+5. **Local development** - `/life/v1/<seed>` has no physical file, so the dev server
+   (`python3 dev-server.py 8000`, standard library only, dev-only, never used in
+   production) serves `index.html` for those paths; the app then reads the pathname.
+   Production needs the equivalent one-line Caddy fallback:
+   `try_files {path} /index.html` (or `handle` + `try_files`) for `/life/*`.
+6. **Introducing v2** - freeze the current algorithm/dataset behind the `v1` dispatch,
+   add the new algorithm as `v2`, extend `SUPPORTED_VERSIONS`, and generate/share `v2`
+   links. Reproducibility caveat: lives derive probabilities from the World Bank live
+   dataset when available, so a seed is exactly reproducible given the same dataset;
+   dataset revisions may shift probabilities slightly (the RNG sequence itself is stable).
+
 ## Limitations
 
 - Income figures are rough estimates in nominal USD - not adjusted for local purchasing power (PPP).

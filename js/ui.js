@@ -10,9 +10,11 @@
   var els = {};
 
   var SAVED_STORAGE_KEY = 'randomLife.savedLives.v1';
-  var recentLives = []; // session-only, most recent first: [{ id, person, createdAt }]
+  var recentLives = []; // session-only, most recent first: [{ id, person, seed, createdAt }]
   var savedLives = []; // persisted, most recently saved first: [{ id, person, savedAt }]
   var uidCounter = 0;
+  var currentSeed = null; // seed of the life currently shown, or null
+  var shareStatusTimer = null;
 
   function makeId() {
     uidCounter += 1;
@@ -62,8 +64,13 @@
     return savedLives.some(function (e) { return e.id === id; });
   }
 
-  function addToRecent(person) {
-    recentLives.unshift({ id: makeId(), person: clonePerson(person), createdAt: Date.now() });
+  function addToRecent(person, seed) {
+    recentLives.unshift({
+      id: makeId(),
+      person: clonePerson(person),
+      seed: (seed != null ? seed : (person && person.seed) || null),
+      createdAt: Date.now()
+    });
     renderHistory();
   }
 
@@ -303,22 +310,127 @@
 
   function handleGenerate(generateFn) {
     setLoading(true);
-    // Let the loading state paint before the (fast) synchronous work.
-    global.requestAnimationFrame(function () {
-      global.setTimeout(function () {
-        try {
-          var person = generateFn();
-          if (person) {
-            renderProfile(person);
-            addToRecent(person);
-          }
-        } catch (err) {
-          console.error('Generation failed:', err);
-          els.dataStatus.textContent = 'Sorry — could not generate a person. Please try again.';
-        } finally {
-          setLoading(false);
+    var started = false;
+    var runSync = function () {
+      if (started) return;
+      started = true;
+      try {
+        var result = generateFn();
+        if (result) {
+          // generateFn returns { person, seed }; accept a bare person too.
+          var person = result.person || result;
+          var seed = result.seed || (person && person.seed) || null;
+          displayLife(person, seed, { addToRecent: true });
         }
-      }, 180); // brief, so the spinner is perceptible
+      } catch (err) {
+        console.error('Generation failed:', err);
+        els.dataStatus.textContent = 'Sorry — could not generate a person. Please try again.';
+      } finally {
+        setLoading(false);
+      }
+    };
+    var afterFrame = function () { global.setTimeout(runSync, 180); }; // brief, so the spinner is perceptible
+    if (typeof global.requestAnimationFrame === 'function') {
+      // Let the loading state paint before the (fast) synchronous work.
+      global.requestAnimationFrame(afterFrame);
+      // Safety net: if the frame never arrives (throttled rAF in an
+      // embedded/headless context, or no rAF at all), still generate
+      // instead of leaving the buttons stuck loading.
+      global.setTimeout(runSync, 1500);
+    } else {
+      afterFrame();
+    }
+  }
+
+  // Show a life as the current one: render it, remember its seed for the
+  // Share button, and clear any stale share confirmation. Does not touch the
+  // URL — callers (app.js) own history updates.
+  function displayLife(person, seed, opts) {
+    if (!person) return;
+    currentSeed = (seed != null ? seed : (person.seed || null));
+    renderProfile(person);
+    if (!opts || opts.addToRecent !== false) addToRecent(person, currentSeed);
+    clearShareStatus();
+  }
+
+  function getCurrentSeed() { return currentSeed; }
+
+  // Return to the homepage state (used for Back-to-start and invalid URLs).
+  function showHomepage() {
+    currentSeed = null;
+    if (els.profileSection) els.profileSection.hidden = true;
+    clearShareStatus();
+  }
+
+  function clearShareStatus() {
+    if (shareStatusTimer) { global.clearTimeout(shareStatusTimer); shareStatusTimer = null; }
+    if (els.shareStatus) els.shareStatus.textContent = '';
+  }
+
+  function setShareStatus(msg) {
+    if (!els.shareStatus) return;
+    els.shareStatus.textContent = msg;
+    if (shareStatusTimer) global.clearTimeout(shareStatusTimer);
+    shareStatusTimer = global.setTimeout(clearShareStatus, 3000);
+  }
+
+  function copyViaTextarea(text) {
+    // Older browsers (or denied clipboard permission): hidden textarea + execCommand.
+    return new Promise(function (resolve) {
+      try {
+        var ta = doc.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'absolute';
+        ta.style.left = '-9999px';
+        doc.body.appendChild(ta);
+        ta.select();
+        var ok = false;
+        try { ok = doc.execCommand('copy'); } catch (e) { ok = false; }
+        doc.body.removeChild(ta);
+        resolve(!!ok);
+      } catch (e) { resolve(false); }
+    });
+  }
+
+  function copyTextFallback(text) {
+    if (global.navigator && global.navigator.clipboard &&
+        typeof global.navigator.clipboard.writeText === 'function') {
+      // Note: may throw synchronously (e.g. permission denied with no user
+      // gesture) as well as reject — handle both, then try the textarea.
+      try {
+        var p = global.navigator.clipboard.writeText(text);
+        if (p && typeof p.then === 'function') {
+          return p.then(function () { return true; }, function () { return copyViaTextarea(text); });
+        }
+        return Promise.resolve(true);
+      } catch (e) { /* fall through to textarea */ }
+    }
+    return copyViaTextarea(text);
+  }
+
+  // Share the currently displayed life: native share sheet where supported,
+  // otherwise copy the canonical URL to the clipboard with a subtle
+  // "Link copied" confirmation. No modals or popups.
+  function shareLife() {
+    if (!currentSeed || !App.getAbsoluteLifeUrl) return Promise.resolve(false);
+    var url;
+    try {
+      url = App.getAbsoluteLifeUrl(currentSeed);
+    } catch (e) { return Promise.resolve(false); }
+    var nav = global.navigator || {};
+    if (typeof nav.share === 'function') {
+      try {
+        var shared = nav.share({ title: doc.title || 'Random Life', text: 'A random life:', url: url });
+        if (shared && typeof shared.catch === 'function') {
+          return shared.then(function () { return true; }, function () { return false; });
+        }
+        return Promise.resolve(true);
+      } catch (e) { /* fall through to clipboard */ }
+    }
+    return copyTextFallback(url).then(function (ok) {
+      setShareStatus(ok ? 'Link copied' : url);
+      return ok;
     });
   }
 
@@ -381,6 +493,8 @@
   function initUI(generateFn) {
     els.generateBtn = $('generate-btn');
     els.regenerateBtn = $('regenerate-btn');
+    els.shareBtn = $('share-btn');
+    els.shareStatus = $('share-status');
     els.profileSection = $('profile-section');
     els.profileCard = $('profile-card');
     els.name = $('person-name');
@@ -415,6 +529,7 @@
 
     if (els.generateBtn) els.generateBtn.addEventListener('click', run);
     if (els.regenerateBtn) els.regenerateBtn.addEventListener('click', run);
+    if (els.shareBtn) els.shareBtn.addEventListener('click', function () { shareLife(); });
 
     // Space bar generates a new life on desktop, except when focus is on an
     // interactive element (where Space has its normal role: activating
@@ -477,6 +592,10 @@
   App.initUI = initUI;
   App.updateDataStatus = updateDataStatus;
   App.renderProfile = renderProfile;
+  App.displayLife = displayLife;
+  App.showHomepage = showHomepage;
+  App.getCurrentSeed = getCurrentSeed;
+  App.shareLife = shareLife;
   App.getRecentLives = function () { return recentLives; };
   App.getSavedLives = function () { return savedLives; };
 })(typeof window !== 'undefined' ? window : this);
