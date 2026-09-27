@@ -35,7 +35,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="favicon.ico" sizes="any">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <link rel="stylesheet" href="pico.css">
 </head>
 <body>
   <header class="container">
@@ -77,10 +77,37 @@
   </main>
 
   <footer class="container">
-    <button id="info-btn" type="button" class="secondary outline" aria-expanded="false" aria-controls="info-dialog">Data &amp; Methodology</button>
+    <div class="footer-actions">
+      <button id="info-btn" type="button" class="secondary outline" aria-expanded="false" aria-controls="info-dialog">Data &amp; Methodology</button>
+      <button id="history-btn" type="button" class="secondary outline" aria-expanded="false" aria-controls="history-dialog">History</button>
+    </div>
     <p><small>Generated people are entirely fictional. Statistics approximate real global distributions.</small></p>
     <p><small>© 2026 Alex Bowles. All rights reserved.</small></p>
   </footer>
+
+  <dialog id="history-dialog" aria-label="History">
+    <article>
+      <header>
+        <button class="dialog-close" type="button" rel="prev" aria-label="Close"></button>
+        <h2>History</h2>
+      </header>
+      <div class="history-tabs" role="tablist" aria-label="History sections">
+        <button id="history-tab-recent" type="button" class="secondary outline" role="tab" aria-selected="true" aria-controls="history-recent-pane">Recent</button>
+        <button id="history-tab-saved" type="button" class="secondary outline" role="tab" aria-selected="false" aria-controls="history-saved-pane">Saved</button>
+      </div>
+      <div id="history-recent-pane" role="tabpanel" aria-labelledby="history-tab-recent">
+        <p id="history-recent-empty" class="history-empty">No lives generated yet in this session.</p>
+        <ul id="history-recent-list" class="history-list"></ul>
+      </div>
+      <div id="history-saved-pane" role="tabpanel" aria-labelledby="history-tab-saved" hidden>
+        <p id="history-saved-empty" class="history-empty">No saved lives yet. Click “Save” next to a recent life to keep it here.</p>
+        <ul id="history-saved-list" class="history-list"></ul>
+      </div>
+      <footer>
+        <button class="dialog-close secondary" type="button">Close</button>
+      </footer>
+    </article>
+  </dialog>
 
   <dialog id="info-dialog" aria-label="Data sources and methodology">
     <article>
