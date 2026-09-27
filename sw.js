@@ -2,23 +2,28 @@
  * Cache-first for static assets, network-first (with cache fallback) for the
  * World Bank API. Uses relative URLs so it works from any deployment path.
  */
-var CACHE_NAME = 'random-life-v19';
+var CACHE_NAME = 'random-life-v20';
+// ASSET_VERSION: keep in step with the ?v= URLs in index.html / 404.html.
+// Bump all three together on any static-asset change so HTML, JS and CSS can
+// never mix old and new across browser, edge or service-worker caches.
+var ASSET_VERSION = 'v=20';
+function v(url) { return url + '?' + ASSET_VERSION; }
 var STATIC_ASSETS = [
   './',
   './index.html',
   './404.html',
   './robots.txt',
   './sitemap.xml',
-  './pico.css',
-  './manifest.webmanifest',
-  './favicon.ico',
-  './icon.svg',
-  './js/seed.js',
-  './js/names.js',
-  './js/data.js',
-  './js/generator.js',
-  './js/ui.js',
-  './js/app.js',
+  v('./pico.css'),
+  v('./manifest.webmanifest'),
+  v('./favicon.ico'),
+  v('./icon.svg'),
+  v('./js/seed.js'),
+  v('./js/names.js'),
+  v('./js/data.js'),
+  v('./js/generator.js'),
+  v('./js/ui.js'),
+  v('./js/app.js'),
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/apple-touch-icon.png'
