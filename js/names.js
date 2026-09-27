@@ -58,20 +58,16 @@
     }
   };
 
-  // rng is an optional () -> [0,1) function. When omitted, Math.random()
-  // is used (unseeded generation); seeded generation passes a PRNG so the
-  // same seed always picks the same names.
-  function pick(arr, rng) {
-    var rand = (typeof rng === 'function') ? rng : Math.random;
-    return arr[Math.floor(rand() * arr.length)];
+  function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
   }
 
-  function generateName(region, sex, rng) {
+  function generateName(region, sex) {
     var group = NAMES[region] || NAMES.north_american_oceanian;
     var firstList = sex === 'male' ? group.male : group.female;
     return {
-      first: pick(firstList, rng),
-      last: pick(group.surnames, rng)
+      first: pick(firstList),
+      last: pick(group.surnames)
     };
   }
 

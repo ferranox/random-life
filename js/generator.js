@@ -1,32 +1,17 @@
 /* generator.js - random-person algorithm.
- * Depends on: App.generateName, App.createSeededRng, App.normalizeSeed,
- *   App.getCountries, App.AGE_BANDS, App.AGE_WEIGHTS, App.OCCUPATIONS,
- *   App.HABITATION, App.DATA_LOAD_STATUS.
- *
- * Every random step takes an optional trailing `rng` argument
- * (a () -> [0,1) function). When omitted, Math.random() is used, preserving
- * the original unseeded behaviour. App.generateLife(seed) passes a
- * deterministic PRNG so the same seed always produces the same person
- * (given the same country dataset).
+ * Depends on: App.generateName, App.AGE_BANDS, App.AGE_WEIGHTS, App.OCCUPATIONS, App.HABITATION, App.DATA_LOAD_STATUS.
  */
 (function (global) {
   'use strict';
   var App = global.App = global.App || {};
 
   // helpers
-  // Resolve the rng argument to a callable, defaulting to Math.random().
-  function resolveRng(rng) {
-    return (typeof rng === 'function') ? rng : Math.random;
-  }
-
-  function randInt(min, max, rng) {
-    var rand = resolveRng(rng);
-    return Math.floor(rand() * (max - min + 1)) + min;
+  function randInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
   // Weighted pick: items is array, weightFn returns non-negative number.
-  function weightedPick(items, weightFn, rng) {
-    var rand = resolveRng(rng);
+  function weightedPick(items, weightFn) {
     var total = 0;
     var i;
     var weights = [];
@@ -37,7 +22,7 @@
       total += w;
     }
     if (total <= 0) return null;
-    var r = rand() * total;
+    var r = Math.random() * total;
     for (i = 0; i < items.length; i++) {
       r -= weights[i];
       if (r < 0) return items[i];
@@ -45,11 +30,10 @@
     return items[items.length - 1];
   }
 
-  function weightedIndex(weightsArr, rng) {
-    var rand = resolveRng(rng);
+  function weightedIndex(weightsArr) {
     var total = 0, i;
     for (i = 0; i < weightsArr.length; i++) total += weightsArr[i];
-    var r = rand() * total;
+    var r = Math.random() * total;
     for (i = 0; i < weightsArr.length; i++) {
       r -= weightsArr[i];
       if (r < 0) return i;
@@ -58,16 +42,15 @@
   }
 
   // Step 1: country (weighted by population)
-  function selectCountry(countries, rng) {
-    return weightedPick(countries, function (c) { return c.pop || 1; }, rng);
+  function selectCountry(countries) {
+    return weightedPick(countries, function (c) { return c.pop || 1; });
   }
 
   // Step 2: sex (country's female share when available, else ~50.3 / 49.7)
-  function selectSex(country, rng) {
-    var rand = resolveRng(rng);
+  function selectSex(country) {
     var f = country ? Number(country.femaleShare) : NaN;
-    if (f > 5 && f < 95) return rand() < (100 - f) / 100 ? 'male' : 'female';
-    return rand() < 0.503 ? 'male' : 'female';
+    if (f > 5 && f < 95) return Math.random() < (100 - f) / 100 ? 'male' : 'female';
+    return Math.random() < 0.503 ? 'male' : 'female';
   }
 
   // Step 3: age
@@ -97,15 +80,15 @@
     ];
   }
 
-  function selectAge(countryOrGroup, rng) {
+  function selectAge(countryOrGroup) {
     var country = (countryOrGroup && typeof countryOrGroup === 'object') ? countryOrGroup : null;
     var incomeGroup = country ? country.incomeGroup : countryOrGroup;
     var weights = (country && countryAgeWeights(country, incomeGroup)) ||
       App.AGE_WEIGHTS[incomeGroup] ||
       App.AGE_WEIGHTS.LM;
-    var idx = weightedIndex(weights, rng);
+    var idx = weightedIndex(weights);
     var band = App.AGE_BANDS[idx];
-    return randInt(band.min, band.max, rng);
+    return randInt(band.min, band.max);
   }
 
   // Step 4: occupation
@@ -135,7 +118,7 @@
     return (table[ig] != null) ? table[ig] : 0.30;
   }
 
-  function pickWorkingOccupation(country, ig, isUrban, sex, age, rng) {
+  function pickWorkingOccupation(country, ig, isUrban, sex, age) {
     var candidates = App.OCCUPATIONS.filter(function (o) {
       return age >= o.minAge && age <= o.maxAge && (o.weights[ig] || 0) > 0;
     });
@@ -160,7 +143,7 @@
       // Gender bias
       if (o.id === 'homemaker' && sex === 'male') w *= 0.15;
       return w;
-    }, rng) || candidates[0];
+    }) || candidates[0];
   }
 
   function sectorOf(occupation) {
@@ -175,32 +158,31 @@
     return Math.min(2.5, Math.max(0.15, (3 * share) / 100));
   }
 
-  function selectOccupation(country, ig, age, isUrban, sex, rng) {
-    var rand = resolveRng(rng);
+  function selectOccupation(country, ig, age, isUrban, sex) {
     if (age <= 4) return SPECIAL.infant;
 
     if (age >= 5 && age <= 14) {
-      if (ig === 'L' && rand() < 0.18) return SPECIAL.child_worker;
+      if (ig === 'L' && Math.random() < 0.18) return SPECIAL.child_worker;
       return SPECIAL.student_school;
     }
 
     if (age >= 15 && age <= 17) {
-      if (rand() < studentShare(ig, '15_17')) return SPECIAL.student_school;
-      return pickWorkingOccupation(country, ig, isUrban, sex, age, rng);
+      if (Math.random() < studentShare(ig, '15_17')) return SPECIAL.student_school;
+      return pickWorkingOccupation(country, ig, isUrban, sex, age);
     }
 
     if (age >= 18 && age <= 24) {
-      if (rand() < studentShare(ig, '18_24')) return SPECIAL.student;
-      return pickWorkingOccupation(country, ig, isUrban, sex, age, rng);
+      if (Math.random() < studentShare(ig, '18_24')) return SPECIAL.student;
+      return pickWorkingOccupation(country, ig, isUrban, sex, age);
     }
 
     if (age >= 65) {
-      if (rand() < retiredShare(ig)) return SPECIAL.retired;
-      return pickWorkingOccupation(country, ig, isUrban, sex, age, rng);
+      if (Math.random() < retiredShare(ig)) return SPECIAL.retired;
+      return pickWorkingOccupation(country, ig, isUrban, sex, age);
     }
 
     // 25-64
-    return pickWorkingOccupation(country, ig, isUrban, sex, age, rng);
+    return pickWorkingOccupation(country, ig, isUrban, sex, age);
   }
 
   // Step 5: income
@@ -211,13 +193,12 @@
     return (country.gdpPc || 1000) * medianRatio;
   }
 
-  function calcIncome(country, occupation, age, rng) {
-    var rand = resolveRng(rng);
+  function calcIncome(country, occupation, age) {
     var countryMedian = medianIncome(country);
 
     var range = occupation.incomeRatio || [0, 0];
     var lo = range[0], hi = range[1];
-    var occMultiplier = lo + rand() * (hi - lo);
+    var occMultiplier = lo + Math.random() * (hi - lo);
 
     var ageAdj = 1.0;
     if (age < 22) ageAdj = 0.55;
@@ -226,48 +207,46 @@
     else if (age <= 64) ageAdj = 0.92;
     else ageAdj = 0.65;
 
-    var noise = Math.exp((rand() - 0.5) * 0.50); // ~log-normal, sigma≈0.25
+    var noise = Math.exp((Math.random() - 0.5) * 0.50); // ~log-normal, sigma≈0.25
 
     var income = countryMedian * occMultiplier * ageAdj * noise;
     return Math.max(0, Math.round(income));
   }
 
-  function retirementIncome(country, rng) {
-    var rand = resolveRng(rng);
+  function retirementIncome(country) {
     var countryMedian = medianIncome(country);
-    var pensionFactor = 0.30 + rand() * 0.20; // 30-50%
+    var pensionFactor = 0.30 + Math.random() * 0.20; // 30-50%
     return Math.max(0, Math.round(countryMedian * pensionFactor));
   }
 
   // Step 6: habitation
-  function selectHabitation(isUrban, incomeGroup, rng) {
+  function selectHabitation(isUrban, incomeGroup) {
     var set = App.HABITATION[isUrban ? 'urban' : 'rural'];
     var list = set[incomeGroup] || set.LM;
-    var chosen = weightedPick(list, function (pair) { return pair[1]; }, rng);
+    var chosen = weightedPick(list, function (pair) { return pair[1]; });
     return chosen ? chosen[0] : list[0][0];
   }
 
   // Step 7: daily-life access (electricity / water / sanitation / net)
-  function selectHasAccess(pct, rng) {
+  function selectHasAccess(pct) {
     if (pct == null || isNaN(pct)) return null;
-    return resolveRng(rng)() * 100 < pct;
+    return Math.random() * 100 < pct;
   }
 
   // Step 8: children
-  function poissonSample(mean, rng) {
-    var rand = resolveRng(rng);
+  function poissonSample(mean) {
     if (!(mean > 0)) return 0;
     var L = Math.exp(-mean);
     var k = 0;
     var p = 1;
     do {
       k++;
-      p *= rand();
+      p *= Math.random();
     } while (p > L && k < 30);
     return k - 1;
   }
 
-  function selectChildren(age, fert, rng) {
+  function selectChildren(age, fert) {
     if (fert == null || isNaN(fert)) return null;
     if (age < 18) return 0;
     var completion;
@@ -277,26 +256,23 @@
     else if (age <= 34) completion = 0.80;
     else if (age <= 44) completion = 0.95;
     else completion = 1.0;
-    return poissonSample(fert * completion, rng);
+    return poissonSample(fert * completion);
   }
 
   // Make the person :)
-  // countries: array of country objects. rng: optional () -> [0,1) PRNG;
-  // defaults to Math.random() (original unseeded behaviour).
-  function generatePerson(countries, rng) {
+  function generatePerson(countries) {
     if (!countries || !countries.length) {
       throw new Error('generatePerson: no countries available');
     }
-    var rand = resolveRng(rng);
 
-    var country = selectCountry(countries, rng);
+    var country = selectCountry(countries);
     var ig = country.incomeGroup;
-    var sex = selectSex(country, rng);
-    var age = selectAge(country, rng);
+    var sex = selectSex(country);
+    var age = selectAge(country);
     var urbanPct = country.urban != null ? country.urban : 50;
-    var isUrban = rand() < (urbanPct / 100);
+    var isUrban = Math.random() < (urbanPct / 100);
 
-    var occupation = selectOccupation(country, ig, age, isUrban, sex, rng);
+    var occupation = selectOccupation(country, ig, age, isUrban, sex);
 
     // Income determination
     var income;
@@ -306,28 +282,28 @@
         (occupation.incomeRatio && occupation.incomeRatio[0] === 0 && occupation.incomeRatio[1] === 0)) {
       income = null;
     } else if (occupation.special === 'retired') {
-      income = retirementIncome(country, rng);
+      income = retirementIncome(country);
     } else if (occupation.special === 'child_worker') {
-      income = Math.max(0, Math.round((country.gdpPc || 1000) * 0.08 * (0.6 + rand() * 0.8)));
+      income = Math.max(0, Math.round((country.gdpPc || 1000) * 0.08 * (0.6 + Math.random() * 0.8)));
     } else if (occupation.special === 'student_school') {
       income = null;
     } else if (occupation.id === 'unemployed') {
-      income = rand() < 0.5 ? null : Math.round((country.gdpPc || 1000) * 0.02);
+      income = Math.random() < 0.5 ? null : Math.round((country.gdpPc || 1000) * 0.02);
       if (income === 0) income = null;
     } else {
-      income = calcIncome(country, occupation, age, rng);
+      income = calcIncome(country, occupation, age);
     }
 
-    var habitation = selectHabitation(isUrban, ig, rng);
+    var habitation = selectHabitation(isUrban, ig);
     var lifeExpectancy = sex === 'male' ? country.leM : country.leF;
 
-    var hasElec = selectHasAccess(country.elec, rng);
-    var hasWater = selectHasAccess(country.water, rng);
-    var hasSanit = selectHasAccess(country.sanit, rng);
-    var usesNet = selectHasAccess(country.net, rng);
-    var children = selectChildren(age, country.fert, rng);
+    var hasElec = selectHasAccess(country.elec);
+    var hasWater = selectHasAccess(country.water);
+    var hasSanit = selectHasAccess(country.sanit);
+    var usesNet = selectHasAccess(country.net);
+    var children = selectChildren(age, country.fert);
 
-    var name = App.generateName(country.culture, sex, rng);
+    var name = App.generateName(country.culture, sex);
 
     return {
       name: name,
@@ -361,38 +337,4 @@
 
   App.generatePerson = generatePerson;
   App.countryAgeWeights = countryAgeWeights;
-
-  // Deterministic life for a seed: same seed -> same life (given the same
-  // country dataset). Throws on invalid seeds. countriesOverride is for
-  // tests; the app passes nothing and uses the currently loaded dataset.
-  //
-  // Reproducibility note: the country *values* (population, rates, ...) come
-  // from the live World Bank dataset when available, so a seed maps to the
-  // same life on any device holding the same dataset. If World Bank figures
-  // are revised, probabilities shift slightly; the RNG sequence for a seed
-  // stays stable. The country *order* is normalised (sorted by ISO code)
-  // here so API ordering can never change what a seed means.
-  function generateLife(seed, countriesOverride) {
-    if (!App.createSeededRng || !App.normalizeSeed) {
-      throw new Error('generateLife: seed.js must be loaded');
-    }
-    var norm = App.normalizeSeed(seed);
-    var rng = App.createSeededRng(norm);
-    var countries = countriesOverride ||
-      (App.getCountries ? App.getCountries() : null);
-    if (!countries || !countries.length) {
-      throw new Error('generateLife: no countries available');
-    }
-    var sorted = countries.slice().sort(function (a, b) {
-      if (a.code < b.code) return -1;
-      if (a.code > b.code) return 1;
-      return 0;
-    });
-    var person = generatePerson(sorted, rng);
-    person.seed = norm;
-    person.generatorVersion = App.GENERATOR_VERSION || 'v1';
-    return person;
-  }
-
-  App.generateLife = generateLife;
 })(typeof window !== 'undefined' ? window : this);

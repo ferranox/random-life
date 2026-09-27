@@ -2,9 +2,6 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <!-- Base URL: share links (/life/v1/<seed>) are served as index.html from a
-       sub-path, so relative asset URLs must still resolve from the site root. -->
-  <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>Random Life Generator – Discover a Random Life on Earth</title>
@@ -90,8 +87,6 @@
         </div>
         <footer>
           <button id="regenerate-btn" type="button" class="secondary">Generate another</button>
-          <button id="share-btn" type="button" class="secondary outline">Share this life</button>
-          <p><small id="share-status" aria-live="polite"></small></p>
         </footer>
       </article>
     </section>
@@ -200,7 +195,6 @@
   </dialog>
 
   <!-- Classic scripts, loaded in dependency order (no bundler required). -->
-  <script src="js/seed.js"></script>
   <script src="js/names.js"></script>
   <script src="js/data.js"></script>
   <script src="js/generator.js"></script>
