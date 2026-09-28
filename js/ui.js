@@ -378,6 +378,46 @@
     }
   }
 
+  // Contact dialog handling (mirrors the history dialog pattern).
+  function openContact() {
+    if (!els.contactDialog) return;
+    if (els.contactBtn) els.contactBtn.setAttribute('aria-expanded', 'true');
+    if (typeof els.contactDialog.showModal === 'function') {
+      els.contactDialog.showModal();
+    } else {
+      els.contactDialog.setAttribute('open', '');
+    }
+  }
+  function closeContact() {
+    if (!els.contactDialog) return;
+    if (els.contactBtn) els.contactBtn.setAttribute('aria-expanded', 'false');
+    if (typeof els.contactDialog.close === 'function' && els.contactDialog.open) {
+      els.contactDialog.close();
+    } else {
+      els.contactDialog.removeAttribute('open');
+    }
+  }
+
+  // Privacy dialog handling (mirrors the contact dialog pattern).
+  function openPrivacy() {
+    if (!els.privacyDialog) return;
+    if (els.privacyBtn) els.privacyBtn.setAttribute('aria-expanded', 'true');
+    if (typeof els.privacyDialog.showModal === 'function') {
+      els.privacyDialog.showModal();
+    } else {
+      els.privacyDialog.setAttribute('open', '');
+    }
+  }
+  function closePrivacy() {
+    if (!els.privacyDialog) return;
+    if (els.privacyBtn) els.privacyBtn.setAttribute('aria-expanded', 'false');
+    if (typeof els.privacyDialog.close === 'function' && els.privacyDialog.open) {
+      els.privacyDialog.close();
+    } else {
+      els.privacyDialog.removeAttribute('open');
+    }
+  }
+
   function initUI(generateFn) {
     els.generateBtn = $('generate-btn');
     els.regenerateBtn = $('regenerate-btn');
@@ -393,6 +433,10 @@
     els.infoDialog = $('info-dialog');
     els.historyBtn = $('history-btn');
     els.historyDialog = $('history-dialog');
+    els.contactBtn = $('contact-btn');
+    els.contactDialog = $('contact-dialog');
+    els.privacyBtn = $('privacy-btn');
+    els.privacyDialog = $('privacy-dialog');
     els.tabRecent = $('history-tab-recent');
     els.tabSaved = $('history-tab-saved');
     els.recentPane = $('history-recent-pane');
@@ -423,7 +467,7 @@
     doc.addEventListener('keydown', function (e) {
       if (!e || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.code !== 'Space' && e.key !== ' ' && e.key !== 'Spacebar') return;
-      if ((els.infoDialog && els.infoDialog.open) || (els.historyDialog && els.historyDialog.open)) return;
+      if ((els.infoDialog && els.infoDialog.open) || (els.historyDialog && els.historyDialog.open) || (els.contactDialog && els.contactDialog.open) || (els.privacyDialog && els.privacyDialog.open)) return;
       var active = doc.activeElement;
       if (active) {
         var tag = (active.tagName || '').toLowerCase();
@@ -467,6 +511,38 @@
       els.historyDialog.addEventListener('close', function () {
         if (els.historyBtn) els.historyBtn.setAttribute('aria-expanded', 'false');
         releaseInvokerFocus(els.historyBtn);
+      });
+    }
+
+    if (els.contactBtn) els.contactBtn.addEventListener('click', openContact);
+    if (els.contactDialog) {
+      var contactCloseBtns = els.contactDialog.querySelectorAll('.dialog-close');
+      Array.prototype.forEach.call(contactCloseBtns, function (closeBtn) {
+        closeBtn.addEventListener('click', closeContact);
+      });
+      // Click on backdrop closes. (Clicks on the form itself must not close it.)
+      els.contactDialog.addEventListener('click', function (e) {
+        if (e.target === els.contactDialog) closeContact();
+      });
+      els.contactDialog.addEventListener('close', function () {
+        if (els.contactBtn) els.contactBtn.setAttribute('aria-expanded', 'false');
+        releaseInvokerFocus(els.contactBtn);
+      });
+    }
+
+    if (els.privacyBtn) els.privacyBtn.addEventListener('click', openPrivacy);
+    if (els.privacyDialog) {
+      var privacyCloseBtns = els.privacyDialog.querySelectorAll('.dialog-close');
+      Array.prototype.forEach.call(privacyCloseBtns, function (closeBtn) {
+        closeBtn.addEventListener('click', closePrivacy);
+      });
+      // Click on backdrop closes.
+      els.privacyDialog.addEventListener('click', function (e) {
+        if (e.target === els.privacyDialog) closePrivacy();
+      });
+      els.privacyDialog.addEventListener('close', function () {
+        if (els.privacyBtn) els.privacyBtn.setAttribute('aria-expanded', 'false');
+        releaseInvokerFocus(els.privacyBtn);
       });
     }
 

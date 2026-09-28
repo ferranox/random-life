@@ -98,6 +98,8 @@
     <div class="footer-actions">
       <button id="info-btn" type="button" class="secondary outline" aria-expanded="false" aria-controls="info-dialog">Data &amp; Methodology</button>
       <button id="history-btn" type="button" class="secondary outline" aria-expanded="false" aria-controls="history-dialog">History</button>
+      <button id="contact-btn" type="button" class="secondary outline" aria-expanded="false" aria-controls="contact-dialog">Contact</button>
+      <button id="privacy-btn" type="button" class="secondary outline" aria-expanded="false" aria-controls="privacy-dialog">Privacy</button>
     </div>
     <p><small>Generated people are entirely fictional. Statistics approximate real global distributions.</small></p>
     <p><small>© 2026 Alex Bowles. All rights reserved.</small></p>
@@ -121,6 +123,85 @@
         <p id="history-saved-empty" class="history-empty">No saved lives yet. Click “Save” next to a recent life to keep it here.</p>
         <ul id="history-saved-list" class="history-list"></ul>
       </div>
+      <footer>
+        <button class="dialog-close secondary" type="button">Close</button>
+      </footer>
+    </article>
+  </dialog>
+
+  <dialog id="contact-dialog" aria-label="Contact">
+    <article>
+      <header>
+        <button class="dialog-close" type="button" rel="prev" aria-label="Close"></button>
+        <h2>Contact</h2>
+      </header>
+      <!--
+        FormSubmit.co: submissions are sent to alexbowles@ferranox.xyz.
+        First submission needs one-time activation via the FormSubmit confirmation email.
+      -->
+      <form action="https://formsubmit.co/alexbowles@ferranox.xyz" method="POST">
+        <label for="contact-name">Name
+          <input type="text" id="contact-name" name="name" autocomplete="name" placeholder="Your name" required maxlength="100">
+        </label>
+
+        <label for="contact-email">Email
+          <input type="email" id="contact-email" name="email" autocomplete="email" placeholder="you@example.com" required maxlength="254">
+        </label>
+
+        <label for="contact-subject">Subject
+          <select id="contact-subject" name="_subject" required>
+            <option value="" disabled selected>Choose a subject</option>
+            <option value="General question about Random Life">General question</option>
+            <option value="Bug report for Random Life">Bug report</option>
+            <option value="Data or methodology question">Data / methodology question</option>
+            <option value="Privacy request for Random Life">Privacy request</option>
+            <option value="Other enquiry for Random Life">Other</option>
+          </select>
+        </label>
+
+        <label for="contact-message">Message
+          <textarea id="contact-message" name="message" rows="6" placeholder="How can we help?" required maxlength="5000"></textarea>
+        </label>
+
+        <!-- FormSubmit.co options -->
+        <input type="hidden" name="_template" value="table">
+        <input type="hidden" name="_captcha" value="true">
+        <!-- Honeypot for spam bots (must stay empty). Real users will not see this. -->
+        <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+        <button type="submit">Send message</button>
+      </form>
+      <footer>
+        <button class="dialog-close secondary" type="button">Close</button>
+      </footer>
+    </article>
+  </dialog>
+
+  <dialog id="privacy-dialog" aria-label="Privacy notice">
+    <article>
+      <header>
+        <button class="dialog-close" type="button" rel="prev" aria-label="Close"></button>
+        <h2>Privacy Notice</h2>
+      </header>
+
+      <p><small>Last updated: 28 September 2026.</small></p>
+      <p>Random Life (randomlife.fyi) is run by Alex Bowles. There are no accounts and no sign-in.</p>
+
+      <h3>Data on your device</h3>
+      <p>Saved lives, cached country data, and offline files stay in your own browser (local storage and service-worker cache). They are never sent to us. You can delete them at any time by clearing site data in your browser settings.</p>
+
+      <h3>Contact form</h3>
+      <p>Messages are delivered by FormSubmit.co and emailed to us. Only what you type is sent, so please avoid sensitive personal data. We keep correspondence only as long as needed to handle your enquiry.</p>
+
+      <h3>Technical data</h3>
+      <p>Our hosting provider may log basic connection data (IP address, pages requested, timestamps) for security and reliability. The World Bank API receives standard request data when the app fetches public country statistics.</p>
+
+      <h3>Advertising</h3>
+      <p>When ads are displayed, our advertising partner may use cookies or similar identifiers to serve and measure ads. You can block or delete cookies in your browser settings, and opt out of interest-based ads at <a href="https://www.aboutads.info/choices" rel="noopener">aboutads.info/choices</a>.</p>
+
+      <h3>Your rights</h3>
+      <p>To request access to or deletion of anything you have sent us, use the Contact form and we will respond within 30 days.</p>
+
       <footer>
         <button class="dialog-close secondary" type="button">Close</button>
       </footer>
