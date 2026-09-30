@@ -292,7 +292,7 @@
     [els.generateBtn, els.regenerateBtn].forEach(function (btn) {
       if (!btn) return;
       btn.disabled = isLoading;
-      // Pico CSS renders a spinner for aria-busy buttons (see Loading docs).
+      // styles.css renders a spinner for aria-busy buttons.
       if (isLoading) {
         btn.setAttribute('aria-busy', 'true');
       } else {

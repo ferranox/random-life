@@ -1,0 +1,592 @@
+/* styles.css — Random Life: plain classroom tool.
+ * No framework, no theme. Basic colours only: white/grey + standard blue.
+ * Mobile-first. Light/dark follows the OS (same as Pico did).
+ */
+
+:root {
+  color-scheme: light dark;
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Light */
+  --bg: #f8f9fa;
+  --surface: #ffffff;
+  --text: #212529;
+  --muted: #6c757d;
+  --border: #dee2e6;
+  --border-strong: #adb5bd;
+  --input-bg: #ffffff;
+  --input-border: #ced4da;
+  --primary: #0d6efd;
+  --primary-hover: #0b5ed7;
+  --on-primary: #ffffff;
+  --secondary: #6c757d;
+  --secondary-hover: #5c636a;
+  --stripe: #f8f9fa;
+  --badge-bg: #e9ecef;
+  --link: #0d6efd;
+  --code-bg: #f1f3f5;
+  --shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  --backdrop: rgba(33, 37, 41, 0.5);
+  --focus-ring: rgba(13, 110, 253, 0.25);
+
+  --radius: 0.375rem;
+  --measure: 45rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #212529;
+    --surface: #2b3035;
+    --text: #f8f9fa;
+    --muted: #adb5bd;
+    --border: #495057;
+    --border-strong: #6c757d;
+    --input-bg: #212529;
+    --input-border: #495057;
+    --primary: #0d6efd;
+    --primary-hover: #0b5ed7;
+    --on-primary: #ffffff;
+    --secondary: #6c757d;
+    --secondary-hover: #5c636a;
+    --stripe: rgba(255, 255, 255, 0.03);
+    --badge-bg: #343a40;
+    --link: #6ea8fe;
+    --code-bg: #343a40;
+    --shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.4);
+    --backdrop: rgba(0, 0, 0, 0.6);
+    --focus-ring: rgba(110, 168, 254, 0.35);
+  }
+}
+
+/* ---------- Base ---------- */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+[hidden] { display: none !important; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  font-size: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100vh;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--measure);
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+
+/* ---------- Type ---------- */
+
+h1, h2, h3 {
+  line-height: 1.25;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  color: var(--text);
+}
+
+h1 { font-size: 1.75rem; }
+h2 { font-size: 1.375rem; }
+h3 { font-size: 1.0625rem; margin-top: 1.5rem; }
+
+p { margin: 0 0 1rem; }
+
+small { font-size: 0.875em; color: var(--muted); }
+
+a { color: var(--link); }
+a:hover { text-decoration-thickness: 2px; }
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  padding: 0.1em 0.35em;
+  color: var(--text);
+}
+
+ul, ol { padding-left: 1.25rem; }
+li { margin-bottom: 0.25rem; }
+
+/* ---------- Header ---------- */
+
+body > header.container {
+  padding-top: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+body > header nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+body > header nav strong {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+/* ---------- Main ---------- */
+
+main.container {
+  padding-top: 1.5rem;
+  padding-bottom: 2rem;
+}
+
+main > section:first-child p {
+  color: var(--muted);
+}
+
+/* ---------- Buttons (standard blue / grey) ---------- */
+
+button,
+a[role="button"] {
+  font: inherit;
+  font-weight: 400;
+  line-height: 1.5;
+  cursor: pointer;
+  display: inline-block;
+  text-align: center;
+  text-decoration: none;
+  vertical-align: middle;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: var(--on-primary);
+  padding: 0.5rem 1rem;
+}
+
+button:hover,
+a[role="button"]:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  color: var(--on-primary);
+}
+
+button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Solid grey secondary (e.g. "Generate another"). */
+button.secondary,
+a[role="button"].secondary {
+  background: var(--secondary);
+  border-color: var(--secondary);
+  color: #fff;
+}
+
+button.secondary:hover,
+a[role="button"].secondary:hover {
+  background: var(--secondary-hover);
+  border-color: var(--secondary-hover);
+  color: #fff;
+}
+
+/* Outline grey (footer + tabs). */
+button.outline,
+a[role="button"].outline {
+  background: transparent;
+}
+
+button.secondary.outline,
+a[role="button"].secondary.outline {
+  background: transparent;
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+button.secondary.outline:hover,
+a[role="button"].secondary.outline:hover {
+  background: var(--badge-bg);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+#generate-btn {
+  width: 100%;
+  font-size: 1.0625rem;
+  padding: 0.65rem 1rem;
+}
+@media (min-width: 600px) {
+  #generate-btn { width: auto; min-width: 18rem; }
+}
+
+/* Spinner for aria-busy. */
+button[aria-busy="true"] { pointer-events: none; }
+button[aria-busy="true"]::after {
+  content: "";
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-left: 0.5em;
+  vertical-align: -0.125em;
+  border: 0.15em solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: rl-spin 0.75s linear infinite;
+}
+@keyframes rl-spin { to { transform: rotate(360deg); } }
+
+:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem var(--focus-ring);
+}
+button:focus:not(:focus-visible) { box-shadow: none; }
+
+/* ---------- Result card ---------- */
+
+#profile-section { margin-top: 1.25rem; }
+
+#profile-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow);
+  margin: 0;
+  overflow: hidden;
+}
+
+#profile-card > header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--stripe);
+}
+
+#profile-card > header h2 { margin-bottom: 0.25rem; }
+
+#profile-card > header p { margin: 0; color: var(--muted); }
+
+#profile-card > footer {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+#regenerate-btn { width: 100%; }
+@media (min-width: 600px) {
+  #regenerate-btn { width: auto; }
+}
+
+/* ---------- Table ---------- */
+
+.overflow-auto { overflow-x: auto; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1rem;
+}
+
+tbody th,
+tbody td {
+  padding: 0.6rem 1.25rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+}
+
+tbody tr:last-child th,
+tbody tr:last-child td { border-bottom: none; }
+
+tbody tr:nth-child(odd) td,
+tbody tr:nth-child(odd) th { background: var(--stripe); }
+
+tbody th {
+  font-weight: 600;
+  color: var(--muted);
+  width: 40%;
+  font-size: 0.9375rem;
+}
+
+tbody td { color: var(--text); }
+
+/* ---------- Status badge ---------- */
+
+#data-status {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--muted);
+  background: var(--badge-bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.2rem 0.75rem;
+}
+
+/* ---------- Footer ---------- */
+
+body > footer.container {
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+  padding-bottom: 2.5rem;
+  text-align: center;
+}
+
+.footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.footer-actions button {
+  font-size: 0.9375rem;
+  padding: 0.4rem 0.8rem;
+}
+
+/* ---------- Dialogs ---------- */
+
+dialog {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 0.5rem;
+  padding: 0;
+  width: min(36rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.25);
+}
+
+dialog::backdrop { background: var(--backdrop); }
+
+/* Single scroll container: the dialog itself scrolls, the inner
+   article must not (two nested scrollers = two side-by-side scrollbars). */
+dialog article {
+  margin: 0;
+  position: relative;
+  max-height: none;
+  overflow: visible;
+}
+
+dialog article > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+dialog article > header h2 {
+  margin: 0;
+  padding-right: 2rem;
+}
+
+dialog article > div,
+dialog article > form,
+dialog article > p,
+dialog article > h3,
+dialog article > ul {
+  margin-inline: 1.25rem;
+}
+dialog article > p:first-of-type,
+dialog article > h3:first-of-type,
+dialog article > ul:first-of-type { margin-top: 1rem; }
+
+dialog article > footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--border);
+  margin-top: 1.25rem;
+  background: var(--stripe);
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+}
+
+/* Plain text "x" close button (empty button in markup). */
+button.dialog-close[rel="prev"] {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  line-height: 1;
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+button.dialog-close[rel="prev"]::after { content: "×"; }
+button.dialog-close[rel="prev"]:hover {
+  background: var(--badge-bg);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+/* ---------- Forms ---------- */
+
+form { padding-bottom: 0.25rem; }
+
+label {
+  display: block;
+  font-weight: 400;
+  margin: 0.75rem 0;
+}
+
+input[type="text"],
+input[type="email"],
+select,
+textarea {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  font: inherit;
+  color: var(--text);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius);
+  padding: 0.375rem 0.75rem;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 8rem;
+}
+
+input::placeholder,
+textarea::placeholder { color: var(--muted); opacity: 1; }
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 0;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 0.25rem var(--focus-ring);
+}
+
+form button[type="submit"] { width: 100%; margin-top: 0.5rem; }
+@media (min-width: 600px) {
+  form button[type="submit"] { width: auto; }
+}
+
+/* ---------- History ---------- */
+
+.history-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 1.25rem 0.75rem;
+}
+
+.history-tabs [role="tab"] {
+  font-size: 0.9375rem;
+  padding: 0.4rem 0.8rem;
+}
+
+.history-tabs [role="tab"][aria-selected="true"] {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+.history-tabs [role="tab"][aria-selected="true"]:hover {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+
+.history-list {
+  list-style: none;
+  margin: 0 1.25rem;
+  padding: 0;
+}
+
+.history-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+.history-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.25rem 0.25rem 0.25rem 0.5rem;
+}
+
+.history-item-toggle {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border-color: transparent;
+  color: var(--text);
+  padding: 0.4rem;
+  text-align: left;
+  font-weight: 600;
+}
+.history-item-toggle:hover {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.history-item-sub {
+  display: block;
+  font-weight: 400;
+  font-size: 0.875rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-item-details {
+  border-top: 1px solid var(--border);
+  font-size: 0.9375rem;
+}
+.history-item-details th,
+.history-item-details td { padding: 0.45rem 0.75rem; }
+
+.history-action {
+  flex-shrink: 0;
+  font-size: 0.875rem;
+  padding: 0.25rem 0.6rem;
+}
+.history-action:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+.history-empty {
+  color: var(--muted);
+  margin: 0 1.25rem 1rem;
+}
+
+/* ---------- 404 ---------- */
+
+main.container > h1:first-child { margin-top: 2rem; }
+
+@media (min-width: 600px) {
+  h1 { font-size: 2rem; }
+  main.container { padding-top: 2rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
