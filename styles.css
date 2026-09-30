@@ -296,10 +296,6 @@ a[role="button"].secondary.outline:hover {
   margin-top: 2rem;
 }
 
-#advanced-section h2 {
-  margin-bottom: 0;
-}
-
 /* Spinner for aria-busy. */
 button[aria-busy="true"] { pointer-events: none; }
 button[aria-busy="true"]::after {
