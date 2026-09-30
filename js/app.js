@@ -17,9 +17,9 @@
     });
   }
 
-  function generateCallback() {
+  function generateCallback(overrides) {
     var countries = App.getCountries();
-    return App.generatePerson(countries);
+    return App.generatePerson(countries, overrides);
   }
 
   function start() {
@@ -29,6 +29,7 @@
 
     App.loadData().then(function () {
       App.updateDataStatus();
+      if (App.refreshLifeCountries) App.refreshLifeCountries();
     }).catch(function (err) {
       console.warn('loadData failed:', err && err.message);
       App.updateDataStatus();

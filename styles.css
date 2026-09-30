@@ -181,7 +181,7 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* Solid grey secondary (e.g. "Generate another"). */
+/* Solid grey secondary (e.g. "Generate again"). */
 button.secondary,
 a[role="button"].secondary {
   background: var(--secondary);
@@ -223,6 +223,80 @@ a[role="button"].secondary.outline:hover {
 }
 @media (min-width: 600px) {
   #generate-btn { width: auto; min-width: 18rem; }
+}
+
+/* ---------- Life output controls (comparison) ---------- */
+
+#life-controls-section {
+  margin: 1rem 0 0;
+}
+
+#life-controls {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.life-control {
+  position: relative;
+  margin: 0;
+  padding: 0.75rem 0.9rem 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow);
+}
+
+.life-control > legend {
+  font-weight: 700;
+  padding: 0 0.4rem;
+}
+
+.life-remove-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.6rem;
+  font-size: 0.8125rem;
+  padding: 0.2rem 0.6rem;
+}
+
+.life-fields {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: 1fr;
+  margin-top: 0.25rem;
+}
+
+@media (min-width: 600px) {
+  .life-fields { grid-template-columns: 1fr 1fr 1fr; }
+}
+
+.life-fields label {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.life-fields select {
+  margin-top: 0.25rem;
+}
+
+#add-life-btn {
+  width: 100%;
+  font-size: 0.9375rem;
+  padding: 0.45rem 0.9rem;
+}
+@media (min-width: 600px) {
+  #add-life-btn { width: auto; }
+}
+
+#advanced-section {
+  margin-top: 2rem;
+}
+
+#advanced-section h2 {
+  margin-bottom: 0;
 }
 
 /* Spinner for aria-busy. */
@@ -287,6 +361,7 @@ button:focus:not(:focus-visible) { box-shadow: none; }
 table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
   font-size: 1rem;
 }
 
@@ -312,6 +387,104 @@ tbody th {
 }
 
 tbody td { color: var(--text); }
+
+/* ---------- Comparison table (multiple lives) ---------- */
+
+#profile-card .overflow-auto {
+  overflow-x: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+#profile-card table[data-compare] {
+  table-layout: fixed;
+  width: max-content;
+  min-width: 100%;
+}
+
+#profile-card table[data-compare] thead th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+  background: var(--stripe);
+  font-size: 1rem;
+  overflow: hidden;
+}
+
+#profile-card table[data-compare] thead th.compare-corner {
+  width: 8.5rem;
+  min-width: 8.5rem;
+  max-width: 8.5rem;
+  position: sticky;
+  left: 0;
+  z-index: 3;
+}
+
+#profile-card table[data-compare] thead th.compare-person {
+  width: 12rem;
+  min-width: 12rem;
+  max-width: 12rem;
+}
+
+#profile-card table[data-compare] tbody th {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  width: 8.5rem;
+  min-width: 8.5rem;
+  max-width: 8.5rem;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#profile-card table[data-compare] tbody td {
+  width: 12rem;
+  min-width: 12rem;
+  max-width: 12rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Occupation values are condensed (see data.js) and pinned to one line. */
+td.occ {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#profile-card table[data-compare] tbody tr:nth-child(odd) td {
+  background: var(--stripe);
+}
+
+#profile-card table[data-compare] tbody tr:nth-child(odd) th {
+  /* Keep row labels opaque so scrolled columns slide underneath cleanly. */
+  background: var(--surface);
+  /* Subtle stripe hint without translucency issues in dark mode. */
+  box-shadow: inset 0 0 0 999px var(--stripe);
+}
+
+.compare-name {
+  font-weight: 700;
+  color: var(--text);
+  font-size: 1.0625rem;
+  line-height: 1.3;
+}
+
+.compare-sub,
+.compare-country {
+  font-weight: 400;
+  font-size: 0.875rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.compare-country {
+  margin-top: 0.1rem;
+}
 
 /* ---------- Status badge ---------- */
 

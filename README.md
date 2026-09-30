@@ -6,7 +6,7 @@ Live site: https://randomlife.fyi/
 
 ## What it is
 
-Press **Generate Random Life** to create an entirely fictional person - country, age, sex, urban/rural habitat, occupation, income estimate, life expectancy, access to electricity / water / sanitation / internet, and number of children - with probabilities that match real global distributions.
+Press **Generate** to create an entirely fictional person - country, age, sex, urban/rural habitat, occupation, income estimate, life expectancy, access to electricity / water / sanitation / internet, and number of children - with probabilities that match real global distributions.
 
 No backend. Static HTML/CSS/JS - works offline once loaded.
 

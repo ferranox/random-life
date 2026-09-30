@@ -172,36 +172,36 @@
     { id: 'subsistence_farmer', name: 'Subsistence farmer', icon: '\uD83C\uDF3E', category: 'Agriculture', minAge: 15, maxAge: 74, weights: { L: 35, LM: 18, UM: 5, H: 0 }, incomeRatio: [0.12, 0.35], habitat: 'rural' },
     { id: 'commercial_farmer', name: 'Commercial farmer', icon: '\uD83D\uDE9C', category: 'Agriculture', minAge: 20, maxAge: 69, weights: { L: 6, LM: 8, UM: 5, H: 3 }, incomeRatio: [0.45, 1.00], habitat: 'rural' },
     { id: 'fisherman', name: 'Fisher', icon: '\uD83C\uDFA3', category: 'Agriculture', minAge: 16, maxAge: 64, weights: { L: 3, LM: 4, UM: 2, H: 1 }, incomeRatio: [0.20, 0.65], habitat: null },
-    { id: 'herder', name: 'Pastoralist / herder', icon: '\uD83D\uDC04', category: 'Agriculture', minAge: 12, maxAge: 65, weights: { L: 5, LM: 3, UM: 1, H: 0 }, incomeRatio: [0.10, 0.30], habitat: 'rural' },
+    { id: 'herder', name: 'Herder', icon: '\uD83D\uDC04', category: 'Agriculture', minAge: 12, maxAge: 65, weights: { L: 5, LM: 3, UM: 1, H: 0 }, incomeRatio: [0.10, 0.30], habitat: 'rural' },
     // Industry
     { id: 'factory_worker', name: 'Factory worker', icon: '\uD83C\uDFED', category: 'Industry', minAge: 16, maxAge: 64, weights: { L: 4, LM: 12, UM: 10, H: 4 }, incomeRatio: [0.50, 1.00], habitat: 'urban' },
     { id: 'construction_worker', name: 'Construction worker', icon: '\uD83D\uDC77', category: 'Industry', minAge: 18, maxAge: 60, weights: { L: 5, LM: 8, UM: 8, H: 4 }, incomeRatio: [0.40, 0.90], habitat: null },
     { id: 'mine_worker', name: 'Mine worker', icon: '\u26CF\uFE0F', category: 'Industry', minAge: 18, maxAge: 55, weights: { L: 2, LM: 3, UM: 2, H: 1 }, incomeRatio: [0.50, 1.00], habitat: 'rural' },
     // Services (low)
     { id: 'domestic_worker', name: 'Domestic worker', icon: '\uD83E\uDDF9', category: 'Services', minAge: 15, maxAge: 60, weights: { L: 5, LM: 6, UM: 3, H: 1 }, incomeRatio: [0.12, 0.35], habitat: 'urban' },
-    { id: 'street_vendor', name: 'Street vendor / hawker', icon: '\uD83D\uDED2', category: 'Services', minAge: 15, maxAge: 65, weights: { L: 8, LM: 7, UM: 3, H: 0 }, incomeRatio: [0.10, 0.30], habitat: 'urban' },
-    { id: 'driver', name: 'Driver (taxi / truck / auto)', icon: '\uD83D\uDE95', category: 'Services', minAge: 20, maxAge: 65, weights: { L: 3, LM: 5, UM: 5, H: 3 }, incomeRatio: [0.40, 0.85], habitat: null },
-    { id: 'retail_worker', name: 'Retail / shop worker', icon: '\uD83D\uDECD\uFE0F', category: 'Services', minAge: 16, maxAge: 65, weights: { L: 2, LM: 5, UM: 7, H: 6 }, incomeRatio: [0.45, 0.90], habitat: 'urban' },
-    { id: 'food_service', name: 'Food service / restaurant worker', icon: '\uD83C\uDF7D\uFE0F', category: 'Services', minAge: 16, maxAge: 60, weights: { L: 2, LM: 4, UM: 5, H: 5 }, incomeRatio: [0.40, 0.80], habitat: 'urban' },
+    { id: 'street_vendor', name: 'Street vendor', icon: '\uD83D\uDED2', category: 'Services', minAge: 15, maxAge: 65, weights: { L: 8, LM: 7, UM: 3, H: 0 }, incomeRatio: [0.10, 0.30], habitat: 'urban' },
+    { id: 'driver', name: 'Driver', icon: '\uD83D\uDE95', category: 'Services', minAge: 20, maxAge: 65, weights: { L: 3, LM: 5, UM: 5, H: 3 }, incomeRatio: [0.40, 0.85], habitat: null },
+    { id: 'retail_worker', name: 'Retail worker', icon: '\uD83D\uDECD\uFE0F', category: 'Services', minAge: 16, maxAge: 65, weights: { L: 2, LM: 5, UM: 7, H: 6 }, incomeRatio: [0.45, 0.90], habitat: 'urban' },
+    { id: 'food_service', name: 'Restaurant worker', icon: '\uD83C\uDF7D\uFE0F', category: 'Services', minAge: 16, maxAge: 60, weights: { L: 2, LM: 4, UM: 5, H: 5 }, incomeRatio: [0.40, 0.80], habitat: 'urban' },
     { id: 'market_trader', name: 'Market trader', icon: '\uD83C\uDFEA', category: 'Services', minAge: 18, maxAge: 65, weights: { L: 5, LM: 6, UM: 3, H: 1 }, incomeRatio: [0.20, 0.60], habitat: null },
     // Services (mid)
-    { id: 'security_guard', name: 'Security guard / police officer', icon: '\uD83D\uDEE1\uFE0F', category: 'Services', minAge: 20, maxAge: 60, weights: { L: 2, LM: 3, UM: 3, H: 2 }, incomeRatio: [0.50, 0.95], habitat: null },
-    { id: 'office_worker', name: 'Office worker / administrator', icon: '\uD83D\uDCBC', category: 'Services', minAge: 20, maxAge: 65, weights: { L: 1, LM: 4, UM: 7, H: 7 }, incomeRatio: [0.70, 1.30], habitat: 'urban' },
-    { id: 'government_worker', name: 'Government employee', icon: '\uD83C\uDFDB\uFE0F', category: 'Public sector', minAge: 22, maxAge: 65, weights: { L: 2, LM: 4, UM: 4, H: 4 }, incomeRatio: [0.80, 1.50], habitat: null },
+    { id: 'security_guard', name: 'Security guard', icon: '\uD83D\uDEE1\uFE0F', category: 'Services', minAge: 20, maxAge: 60, weights: { L: 2, LM: 3, UM: 3, H: 2 }, incomeRatio: [0.50, 0.95], habitat: null },
+    { id: 'office_worker', name: 'Office worker', icon: '\uD83D\uDCBC', category: 'Services', minAge: 20, maxAge: 65, weights: { L: 1, LM: 4, UM: 7, H: 7 }, incomeRatio: [0.70, 1.30], habitat: 'urban' },
+    { id: 'government_worker', name: 'Government worker', icon: '\uD83C\uDFDB\uFE0F', category: 'Public sector', minAge: 22, maxAge: 65, weights: { L: 2, LM: 4, UM: 4, H: 4 }, incomeRatio: [0.80, 1.50], habitat: null },
     { id: 'teacher', name: 'Teacher', icon: '\uD83D\uDCDA', category: 'Education', minAge: 22, maxAge: 65, weights: { L: 3, LM: 5, UM: 5, H: 5 }, incomeRatio: [0.65, 1.30], habitat: null },
-    { id: 'nurse', name: 'Nurse / healthcare worker', icon: '\uD83C\uDFE5', category: 'Health', minAge: 22, maxAge: 65, weights: { L: 1, LM: 3, UM: 4, H: 5 }, incomeRatio: [0.75, 1.50], habitat: 'urban' },
-    { id: 'small_business_owner', name: 'Small business owner', icon: '\uD83C\uDFE2', category: 'Business', minAge: 20, maxAge: 70, weights: { L: 3, LM: 4, UM: 5, H: 4 }, incomeRatio: [0.50, 2.50], habitat: null },
+    { id: 'nurse', name: 'Nurse', icon: '\uD83C\uDFE5', category: 'Health', minAge: 22, maxAge: 65, weights: { L: 1, LM: 3, UM: 4, H: 5 }, incomeRatio: [0.75, 1.50], habitat: 'urban' },
+    { id: 'small_business_owner', name: 'Business owner', icon: '\uD83C\uDFE2', category: 'Business', minAge: 20, maxAge: 70, weights: { L: 3, LM: 4, UM: 5, H: 4 }, incomeRatio: [0.50, 2.50], habitat: null },
     // Professional
     { id: 'engineer', name: 'Engineer', icon: '\u2699\uFE0F', category: 'Professional', minAge: 23, maxAge: 65, weights: { L: 0, LM: 2, UM: 4, H: 6 }, incomeRatio: [1.20, 2.80], habitat: 'urban' },
-    { id: 'doctor', name: 'Doctor / physician', icon: '\uD83D\uDC68\u200D\u2695\uFE0F', category: 'Health', minAge: 27, maxAge: 68, weights: { L: 0, LM: 1, UM: 2, H: 3 }, incomeRatio: [2.20, 5.50], habitat: 'urban' },
-    { id: 'it_professional', name: 'IT / software professional', icon: '\uD83D\uDCBB', category: 'Professional', minAge: 22, maxAge: 55, weights: { L: 0, LM: 1, UM: 3, H: 6 }, incomeRatio: [1.50, 4.50], habitat: 'urban' },
-    { id: 'business_professional', name: 'Business / finance professional', icon: '\uD83D\uDCCA', category: 'Business', minAge: 24, maxAge: 65, weights: { L: 0, LM: 1, UM: 3, H: 5 }, incomeRatio: [1.40, 4.00], habitat: 'urban' },
+    { id: 'doctor', name: 'Doctor', icon: '\uD83D\uDC68\u200D\u2695\uFE0F', category: 'Health', minAge: 27, maxAge: 68, weights: { L: 0, LM: 1, UM: 2, H: 3 }, incomeRatio: [2.20, 5.50], habitat: 'urban' },
+    { id: 'it_professional', name: 'IT worker', icon: '\uD83D\uDCBB', category: 'Professional', minAge: 22, maxAge: 55, weights: { L: 0, LM: 1, UM: 3, H: 6 }, incomeRatio: [1.50, 4.50], habitat: 'urban' },
+    { id: 'business_professional', name: 'Business worker', icon: '\uD83D\uDCCA', category: 'Business', minAge: 24, maxAge: 65, weights: { L: 0, LM: 1, UM: 3, H: 5 }, incomeRatio: [1.40, 4.00], habitat: 'urban' },
     { id: 'lawyer', name: 'Lawyer', icon: '\u2696\uFE0F', category: 'Professional', minAge: 25, maxAge: 68, weights: { L: 0, LM: 1, UM: 2, H: 3 }, incomeRatio: [1.50, 5.00], habitat: 'urban' },
-    { id: 'artist_creative', name: 'Artist / creative professional', icon: '\uD83C\uDFA8', category: 'Creative', minAge: 18, maxAge: 65, weights: { L: 1, LM: 2, UM: 3, H: 3 }, incomeRatio: [0.40, 2.00], habitat: null },
-    { id: 'craftsperson', name: 'Craftsperson / artisan', icon: '\uD83D\uDD28', category: 'Crafts', minAge: 18, maxAge: 65, weights: { L: 4, LM: 5, UM: 3, H: 2 }, incomeRatio: [0.30, 0.80], habitat: null },
+    { id: 'artist_creative', name: 'Artist', icon: '\uD83C\uDFA8', category: 'Creative', minAge: 18, maxAge: 65, weights: { L: 1, LM: 2, UM: 3, H: 3 }, incomeRatio: [0.40, 2.00], habitat: null },
+    { id: 'craftsperson', name: 'Artisan', icon: '\uD83D\uDD28', category: 'Crafts', minAge: 18, maxAge: 65, weights: { L: 4, LM: 5, UM: 3, H: 2 }, incomeRatio: [0.30, 0.80], habitat: null },
     // Non-working
-    { id: 'unemployed', name: 'Unemployed (seeking work)', icon: '\uD83D\uDCCB', category: 'Not employed', minAge: 16, maxAge: 65, weights: { L: 4, LM: 5, UM: 4, H: 3 }, incomeRatio: [0, 0.05], habitat: null },
-    { id: 'homemaker', name: 'Homemaker / unpaid carer', icon: '\uD83C\uDFE0', category: 'Not employed', minAge: 18, maxAge: 70, weights: { L: 12, LM: 9, UM: 5, H: 3 }, incomeRatio: [0, 0], habitat: null }
+    { id: 'unemployed', name: 'Unemployed', icon: '\uD83D\uDCCB', category: 'Not employed', minAge: 16, maxAge: 65, weights: { L: 4, LM: 5, UM: 4, H: 3 }, incomeRatio: [0, 0.05], habitat: null },
+    { id: 'homemaker', name: 'Homemaker', icon: '\uD83C\uDFE0', category: 'Not employed', minAge: 18, maxAge: 70, weights: { L: 12, LM: 9, UM: 5, H: 3 }, incomeRatio: [0, 0], habitat: null }
   ];
 
   // 5. habitation definitions (by income group)

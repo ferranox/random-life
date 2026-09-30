@@ -96,10 +96,10 @@
   // occupation object from App.OCCUPATIONS. Income-group weights are refined
   // per country with live sector-employment shares and the unemployment rate.
   var SPECIAL = {
-    infant: { name: 'N/A (infant / toddler)', icon: '\uD83C\uDF7C', category: 'Not applicable', special: 'infant' },
-    student_school: { name: 'Student (primary / secondary school)', icon: '\uD83C\uDF92', category: 'Education', special: 'student' },
+    infant: { name: 'Infant', icon: '\uD83C\uDF7C', category: 'Not applicable', special: 'infant' },
+    student_school: { name: 'School student', icon: '\uD83C\uDF92', category: 'Education', special: 'student' },
     student: { name: 'Student', icon: '\uD83C\uDF93', category: 'Education', special: 'student' },
-    child_worker: { name: 'Child worker (informal)', icon: '\uD83E\uDDF9', category: 'Informal labour', special: 'child_worker' },
+    child_worker: { name: 'Child worker', icon: '\uD83E\uDDF9', category: 'Informal labour', special: 'child_worker' },
     retired: { name: 'Retired', icon: '\uD83C\uDF3F', category: 'Retired', special: 'retired' }
   };
 
@@ -260,17 +260,53 @@
   }
 
   // Make the person :)
-  function generatePerson(countries) {
+  // overrides (optional, all default to weighted random behaviour):
+  //   { countryCode: 'IN' | null, sex: 'male' | 'female' | null,
+  //     habitation: 'urban' | 'rural' | null, isUrban: boolean | null }
+  // 'default' / null / undefined means use the existing weighted logic.
+  function findCountryByCode(countries, code) {
+    if (!code) return null;
+    var up = String(code).toUpperCase();
+    for (var i = 0; i < countries.length; i++) {
+      if (countries[i] && String(countries[i].code).toUpperCase() === up) return countries[i];
+    }
+    return null;
+  }
+
+  function generatePerson(countries, overrides) {
     if (!countries || !countries.length) {
       throw new Error('generatePerson: no countries available');
     }
+    overrides = overrides || {};
 
-    var country = selectCountry(countries);
+    var forcedCountryCode = null;
+    if (overrides.countryCode != null && String(overrides.countryCode).toLowerCase() !== 'default' && String(overrides.countryCode) !== '') {
+      forcedCountryCode = String(overrides.countryCode);
+    }
+    var forcedSex = null;
+    if (overrides.sex === 'male' || overrides.sex === 'female') forcedSex = overrides.sex;
+
+    var forcedIsUrban = null;
+    var hab = overrides.habitation;
+    if (hab != null) hab = String(hab).toLowerCase();
+    if (hab === 'urban') forcedIsUrban = true;
+    else if (hab === 'rural') forcedIsUrban = false;
+    else if (overrides.isUrban === true) forcedIsUrban = true;
+    else if (overrides.isUrban === false) forcedIsUrban = false;
+
+    var country = forcedCountryCode ? findCountryByCode(countries, forcedCountryCode) : null;
+    if (forcedCountryCode && !country) {
+      // Requested country not in the current dataset (e.g. live list changed):
+      // fall back to the normal weighted pick so generation never fails.
+      country = selectCountry(countries);
+    } else if (!country) {
+      country = selectCountry(countries);
+    }
     var ig = country.incomeGroup;
-    var sex = selectSex(country);
+    var sex = forcedSex || selectSex(country);
     var age = selectAge(country);
     var urbanPct = country.urban != null ? country.urban : 50;
-    var isUrban = Math.random() < (urbanPct / 100);
+    var isUrban = forcedIsUrban != null ? forcedIsUrban : (Math.random() < (urbanPct / 100));
 
     var occupation = selectOccupation(country, ig, age, isUrban, sex);
 

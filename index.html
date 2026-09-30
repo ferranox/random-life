@@ -68,8 +68,8 @@
   <main class="container">
     <section>
       <h1>Would you swap your life for a random life?</h1>
-      <p>Press below to generate a statistically plausible fictional person anywhere on Earth.</p>
-      <button id="generate-btn" type="button">Generate Random Life</button>
+      <p>You could have been born as anyone on Earth. Press Generate to meet one statistically plausible stranger - their country, age, home, and livelihood drawn from real global data - and ask yourself: <em>would you swap?</em></p>
+      <button id="generate-btn" type="button">Generate</button>
     </section>
 
     <section id="profile-section" aria-live="polite" hidden>
@@ -87,12 +87,20 @@
           </table>
         </div>
         <footer>
-          <button id="regenerate-btn" type="button" class="secondary">Generate another</button>
+          <button id="regenerate-btn" type="button" class="secondary">Generate again</button>
         </footer>
       </article>
     </section>
 
     <p><small id="data-status" aria-live="polite"></small></p>
+
+    <section id="advanced-section" aria-labelledby="advanced-heading">
+      <h2 id="advanced-heading">Advanced</h2>
+      <div id="life-controls-section" aria-label="Life output controls">
+        <div id="life-controls"></div>
+        <button id="add-life-btn" type="button" class="secondary outline">+ Add life for comparison</button>
+      </div>
+    </section>
   </main>
 
   <footer class="container">
