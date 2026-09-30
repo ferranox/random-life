@@ -146,7 +146,8 @@ main.container {
   padding-bottom: 2rem;
 }
 
-main > section:first-child p {
+main > section:first-child p,
+#advanced-section > p {
   color: var(--muted);
 }
 
@@ -737,6 +738,7 @@ form button[type="submit"] { width: 100%; margin-top: 0.5rem; }
   flex-shrink: 0;
   font-size: 0.875rem;
   padding: 0.25rem 0.6rem;
+  margin-right: 0.75rem;
 }
 .history-action:disabled {
   opacity: 0.65;
