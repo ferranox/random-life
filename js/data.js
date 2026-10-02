@@ -1,128 +1,119 @@
-/* data.js - country dataset, world bank live fetcher, and model constants
- * Data sources (static values are approximate 2023-2024 fallbacks only):
- *   - Country list, income group, region: World Bank country metadata (live),
- *     with the static table as fallback. Taiwan (non-WB-member) is kept as a
- *     static supplement.
- *   - Population: World Bank SP.POP.TOTL / UN estimates
- *   - Life expectancy: World Bank SP.DYN.LE00.MA.IN / .FE.IN
- *   - Urbanisation: World Bank SP.URB.TOTL.IN.ZS
- *   - GDP per capita (USD): World Bank NY.GDP.PCAP.CD
- *   - Electricity access (%): World Bank EG.ELC.ACCS.ZS
- *   - Drinking water, at least basic (%): World Bank SH.H2O.BASW.ZS
- *   - Sanitation, at least basic (%): World Bank SH.STA.BASS.ZS
- *   - Internet use (%): World Bank IT.NET.USER.ZS
- *   - Fertility rate (births per woman): World Bank SP.DYN.TFRT.IN
- *   - Age structure (% ages 0-14 / 65+ of total): World Bank SP.POP.0014.TO.ZS /
- *     SP.POP.65UP.TO.ZS (UN World Population Prospects based, updated annually).
- *     Per-country young/old shares anchor the 6-band age model; within-band
- *     splits follow the income-group pattern.
- *   - Sex split (% female): World Bank SP.POP.TOTL.FE.ZS
- *   - Employment mix (% in agriculture / industry / services) and unemployment
- *     rate: World Bank SL.AGR.EMPL.ZS / SL.IND.EMPL.ZS / SL.SRV.EMPL.ZS /
- *     SL.UEM.TOTL.ZS (ILO-modelled estimates).
+/* data.js - country dataset, live World Bank overlay, and model constants
+ * Where the numbers come from (details, releases, reference years and licences
+ * are in the Data & Methodology dialog and in the header of js/dataset.js):
+ *   - Built-in snapshot (js/dataset.js, built by tools/update-data.py, loaded
+ *     before this file so the first Generate works with no network):
+ *       UN WPP 2024  - population, female share, single-year age distribution,
+ *                      total fertility rate, life expectancy at birth by sex
+ *       UN WUP 2025  - urban share (national definitions)
+ *       ILOSTAT      - employment by sector (agriculture / industry / services)
+ *                      and unemployment rate (ILO modelled estimates)
+ *       World Bank   - GDP per capita, electricity, drinking water, sanitation,
+ *                      internet use, income group, region (latest values)
+ *     The WPP / WUP / ILO values are snapshot-only and are never overwritten.
+ *   - Live (browser -> World Bank API, cached for 12 h): only the World Bank
+ *     owned variables above. Each variable is validated and applied on its own;
+ *     anything that fails keeps its snapshot value.
  *   - Flags are derived from the ISO code, so no per-country flag data is kept.
  */
 (function (global) {
   'use strict';
   var App = global.App = global.App || {};
 
-  // 1. static fallback dataset
-  var STATIC_COUNTRIES = [
-    { code: 'IN', name: 'India', pop: 1428000000, incomeGroup: 'LM', leM: 70.5, leF: 73.6, urban: 36, gdpPc: 2411, elec: 100, water: 96, sanit: 83, net: 70, fert: 2.0, age014: 24.2, age65: 7.4, region: 'Asia', culture: 'south_asian', flag: '\uD83C\uDDEE\uD83C\uDDF3' },
-    { code: 'CN', name: 'China', pop: 1412000000, incomeGroup: 'UM', leM: 75.0, leF: 80.5, urban: 64, gdpPc: 12720, elec: 100, water: 96, sanit: 97, net: 92, fert: 1.0, age014: 15.4, age65: 14.9, region: 'Asia', culture: 'east_asian', flag: '\uD83C\uDDE8\uD83C\uDDF3' },
-    { code: 'US', name: 'United States', pop: 334000000, incomeGroup: 'H', leM: 74.8, leF: 80.2, urban: 83, gdpPc: 76399, elec: 100, water: 100, sanit: 100, net: 95, fert: 1.6, age014: 17.1, age65: 18.4, region: 'North America', culture: 'north_american_oceanian', flag: '\uD83C\uDDFA\uD83C\uDDF8' },
-    { code: 'ID', name: 'Indonesia', pop: 277000000, incomeGroup: 'UM', leM: 66.2, leF: 70.9, urban: 58, gdpPc: 4788, elec: 100, water: 89, sanit: 88, net: 73, fert: 2.1, age014: 24.2, age65: 7.5, region: 'Asia', culture: 'southeast_asian', flag: '\uD83C\uDDEE\uD83C\uDDE9' },
-    { code: 'PK', name: 'Pakistan', pop: 240000000, incomeGroup: 'LM', leM: 65.5, leF: 67.9, urban: 38, gdpPc: 1568, elec: 96, water: 91, sanit: 72, net: 57, fert: 3.5, age014: 36.2, age65: 4.4, region: 'Asia', culture: 'south_asian', flag: '\uD83C\uDDF5\uD83C\uDDF0' },
-    { code: 'BR', name: 'Brazil', pop: 216000000, incomeGroup: 'UM', leM: 72.0, leF: 79.0, urban: 88, gdpPc: 8917, elec: 100, water: 100, sanit: 92, net: 85, fert: 1.6, age014: 19.4, age65: 11.5, region: 'South America', culture: 'latin_american', flag: '\uD83C\uDDE7\uD83C\uDDF7' },
-    { code: 'NG', name: 'Nigeria', pop: 224000000, incomeGroup: 'LM', leM: 52.7, leF: 54.4, urban: 54, gdpPc: 2184, elec: 63, water: 82, sanit: 48, net: 41, fert: 4.4, age014: 40.5, age65: 3.1, region: 'Africa', culture: 'sub_saharan', flag: '\uD83C\uDDF3\uD83C\uDDEC' },
-    { code: 'BD', name: 'Bangladesh', pop: 173000000, incomeGroup: 'LM', leM: 71.2, leF: 75.0, urban: 40, gdpPc: 2688, elec: 100, water: 99, sanit: 68, net: 53, fert: 2.1, age014: 27.6, age65: 6.7, region: 'Asia', culture: 'south_asian', flag: '\uD83C\uDDE7\uD83C\uDDE9' },
-    { code: 'RU', name: 'Russia', pop: 144000000, incomeGroup: 'UM', leM: 66.0, leF: 76.4, urban: 75, gdpPc: 15271, elec: 100, water: 97, sanit: 92, net: 94, fert: 1.4, age014: 17.0, age65: 17.8, region: 'Europe', culture: 'slavic', flag: '\uD83C\uDDF7\uD83C\uDDFA' },
-    { code: 'ET', name: 'Ethiopia', pop: 126000000, incomeGroup: 'L', leM: 63.0, leF: 67.0, urban: 22, gdpPc: 1028, elec: 57, water: 56, sanit: 10, net: 22, fert: 3.9, age014: 38.8, age65: 3.3, region: 'Africa', culture: 'sub_saharan', flag: '\uD83C\uDDEA\uD83C\uDDF9' },
-    { code: 'MX', name: 'Mexico', pop: 128000000, incomeGroup: 'UM', leM: 72.0, leF: 78.0, urban: 81, gdpPc: 11497, elec: 100, water: 100, sanit: 93, net: 83, fert: 1.9, age014: 24.1, age65: 8.5, region: 'North America', culture: 'latin_american', flag: '\uD83C\uDDF2\uD83C\uDDFD' },
-    { code: 'JP', name: 'Japan', pop: 124000000, incomeGroup: 'H', leM: 81.5, leF: 87.6, urban: 92, gdpPc: 33815, elec: 100, water: 99, sanit: 100, net: 86, fert: 1.1, age014: 11.2, age65: 30.0, region: 'Asia', culture: 'east_asian', flag: '\uD83C\uDDEF\uD83C\uDDF5' },
-    { code: 'PH', name: 'Philippines', pop: 117000000, incomeGroup: 'LM', leM: 67.3, leF: 73.6, urban: 48, gdpPc: 3499, elec: 95, water: 96, sanit: 87, net: 67, fert: 1.9, age014: 27.1, age65: 5.7, region: 'Asia', culture: 'southeast_asian', flag: '\uD83C\uDDF5\uD83C\uDDED' },
-    { code: 'CD', name: 'DR Congo', pop: 102000000, incomeGroup: 'L', leM: 58.0, leF: 61.5, urban: 46, gdpPc: 654, elec: 23, water: 36, sanit: 16, net: 20, fert: 6.0, age014: 45.9, age65: 3.1, region: 'Africa', culture: 'sub_saharan', flag: '\uD83C\uDDE8\uD83C\uDDE9' },
-    { code: 'EG', name: 'Egypt', pop: 112000000, incomeGroup: 'LM', leM: 69.6, leF: 74.1, urban: 43, gdpPc: 3699, elec: 100, water: 97, sanit: 97, net: 75, fert: 2.7, age014: 31.6, age65: 5.3, region: 'Africa', culture: 'arab_middle_east', flag: '\uD83C\uDDEA\uD83C\uDDEC' },
-    { code: 'DE', name: 'Germany', pop: 84000000, incomeGroup: 'H', leM: 78.7, leF: 83.5, urban: 78, gdpPc: 48718, elec: 100, water: 100, sanit: 99, net: 94, fert: 1.4, age014: 13.9, age65: 23.7, region: 'Europe', culture: 'west_european', flag: '\uD83C\uDDE9\uD83C\uDDEA' },
-    { code: 'TZ', name: 'Tanzania', pop: 67000000, incomeGroup: 'LM', leM: 64.0, leF: 68.0, urban: 37, gdpPc: 1192, elec: 52, water: 65, sanit: 37, net: 31, fert: 4.5, age014: 42.3, age65: 3.0, region: 'Africa', culture: 'sub_saharan', flag: '\uD83C\uDDF9\uD83C\uDDFF' },
-    { code: 'TR', name: 'Turkey', pop: 85000000, incomeGroup: 'UM', leM: 75.3, leF: 80.7, urban: 77, gdpPc: 10616, elec: 100, water: 96, sanit: 99, net: 90, fert: 1.5, age014: 21.0, age65: 10.6, region: 'Asia', culture: 'arab_middle_east', flag: '\uD83C\uDDF9\uD83C\uDDF7' },
-    { code: 'TH', name: 'Thailand', pop: 72000000, incomeGroup: 'UM', leM: 73.5, leF: 81.0, urban: 53, gdpPc: 6909, elec: 100, water: 100, sanit: 99, net: 91, fert: 1.2, age014: 14.4, age65: 16.0, region: 'Asia', culture: 'southeast_asian', flag: '\uD83C\uDDF9\uD83C\uDDED' },
-    { code: 'GB', name: 'United Kingdom', pop: 67000000, incomeGroup: 'H', leM: 79.0, leF: 82.9, urban: 84, gdpPc: 45850, elec: 100, water: 100, sanit: 99, net: 95, fert: 1.6, age014: 17.0, age65: 19.7, region: 'Europe', culture: 'west_european', flag: '\uD83C\uDDEC\uD83C\uDDE7' },
-    { code: 'FR', name: 'France', pop: 68000000, incomeGroup: 'H', leM: 79.7, leF: 85.5, urban: 81, gdpPc: 40886, elec: 100, water: 100, sanit: 99, net: 89, fert: 1.6, age014: 16.2, age65: 22.5, region: 'Europe', culture: 'west_european', flag: '\uD83C\uDDEB\uD83C\uDDF7' },
-    { code: 'KE', name: 'Kenya', pop: 55000000, incomeGroup: 'LM', leM: 61.0, leF: 66.0, urban: 29, gdpPc: 2099, elec: 77, water: 66, sanit: 41, net: 35, fert: 3.2, age014: 36.3, age65: 3.0, region: 'Africa', culture: 'sub_saharan', flag: '\uD83C\uDDF0\uD83C\uDDEA' },
-    { code: 'IT', name: 'Italy', pop: 59000000, incomeGroup: 'H', leM: 81.0, leF: 85.4, urban: 71, gdpPc: 34776, elec: 100, water: 100, sanit: 100, net: 89, fert: 1.2, age014: 11.7, age65: 25.1, region: 'Europe', culture: 'west_european', flag: '\uD83C\uDDEE\uD83C\uDDF9' },
-    { code: 'CO', name: 'Colombia', pop: 52000000, incomeGroup: 'UM', leM: 73.7, leF: 80.0, urban: 82, gdpPc: 6624, elec: 99, water: 97, sanit: 97, net: 79, fert: 1.6, age014: 20.0, age65: 10.2, region: 'South America', culture: 'latin_american', flag: '\uD83C\uDDE8\uD83C\uDDF4' },
-    { code: 'ES', name: 'Spain', pop: 48000000, incomeGroup: 'H', leM: 80.7, leF: 86.2, urban: 81, gdpPc: 29674, elec: 100, water: 100, sanit: 100, net: 96, fert: 1.1, age014: 12.6, age65: 21.6, region: 'Europe', culture: 'west_european', flag: '\uD83C\uDDEA\uD83C\uDDF8' },
-    { code: 'UG', name: 'Uganda', pop: 48000000, incomeGroup: 'L', leM: 61.0, leF: 66.0, urban: 26, gdpPc: 964, elec: 55, water: 63, sanit: 24, net: 9, fert: 4.2, age014: 43.1, age65: 2.2, region: 'Africa', culture: 'sub_saharan', flag: '\uD83C\uDDFA\uD83C\uDDEC' },
-    { code: 'AR', name: 'Argentina', pop: 46000000, incomeGroup: 'UM', leM: 73.0, leF: 80.0, urban: 92, gdpPc: 13651, elec: 98, water: 99, sanit: 95, net: 90, fert: 1.5, age014: 21.0, age65: 12.6, region: 'South America', culture: 'latin_american', flag: '\uD83C\uDDE6\uD83C\uDDF7' },
-    { code: 'DZ', name: 'Algeria', pop: 45000000, incomeGroup: 'LM', leM: 75.5, leF: 78.1, urban: 74, gdpPc: 4342, elec: 100, water: 92, sanit: 86, net: 77, fert: 2.7, age014: 29.9, age65: 6.8, region: 'Africa', culture: 'arab_middle_east', flag: '\uD83C\uDDE9\uD83C\uDDFF' },
-    { code: 'SD', name: 'Sudan', pop: 48000000, incomeGroup: 'L', leM: 63.0, leF: 67.0, urban: 35, gdpPc: 1102, elec: 66, water: 65, sanit: 66, net: 19, fert: 4.3, age014: 40.2, age65: 3.4, region: 'Africa', culture: 'arab_middle_east', flag: '\uD83C\uDDF8\uD83C\uDDE9' },
-    { code: 'IQ', name: 'Iraq', pop: 44000000, incomeGroup: 'UM', leM: 68.0, leF: 73.0, urban: 71, gdpPc: 5937, elec: 100, water: 98, sanit: 99, net: 82, fert: 3.2, age014: 36.0, age65: 3.4, region: 'Asia', culture: 'arab_middle_east', flag: '\uD83C\uDDEE\uD83C\uDDF6' },
-    { code: 'AF', name: 'Afghanistan', pop: 42000000, incomeGroup: 'L', leM: 60.0, leF: 63.0, urban: 26, gdpPc: 356, elec: 88, water: 81, sanit: 55, net: 16, fert: 4.8, age014: 42.6, age65: 2.4, region: 'Asia', culture: 'south_asian', flag: '\uD83C\uDDE6\uD83C\uDDEB' },
-    { code: 'PL', name: 'Poland', pop: 38000000, incomeGroup: 'H', leM: 73.5, leF: 81.4, urban: 60, gdpPc: 18688, elec: 100, water: 90, sanit: 99, net: 89, fert: 1.1, age014: 14.5, age65: 20.8, region: 'Europe', culture: 'east_european', flag: '\uD83C\uDDF5\uD83C\uDDF1' },
-    { code: 'CA', name: 'Canada', pop: 40000000, incomeGroup: 'H', leM: 80.0, leF: 84.3, urban: 82, gdpPc: 55522, elec: 100, water: 98, sanit: 99, net: 94, fert: 1.2, age014: 15.0, age65: 20.3, region: 'North America', culture: 'north_american_oceanian', flag: '\uD83C\uDDE8\uD83C\uDDE6' },
-    { code: 'MA', name: 'Morocco', pop: 37000000, incomeGroup: 'LM', leM: 76.0, leF: 78.5, urban: 64, gdpPc: 3527, elec: 100, water: 92, sanit: 88, net: 91, fert: 2.2, age014: 25.2, age65: 8.5, region: 'Africa', culture: 'arab_middle_east', flag: '\uD83C\uDDF2\uD83C\uDDE6' },
-    { code: 'SA', name: 'Saudi Arabia', pop: 37000000, incomeGroup: 'H', leM: 76.0, leF: 79.5, urban: 84, gdpPc: 30436, elec: 100, water: 99, sanit: 98, net: 100, fert: 2.3, age014: 23.6, age65: 3.1, region: 'Asia', culture: 'arab_middle_east', flag: '\uD83C\uDDF8\uD83C\uDDE6' },
-    { code: 'PE', name: 'Peru', pop: 34000000, incomeGroup: 'UM', leM: 74.0, leF: 79.5, urban: 78, gdpPc: 7126, elec: 97, water: 96, sanit: 79, net: 82, fert: 2.0, age014: 23.6, age65: 9.5, region: 'South America', culture: 'latin_american', flag: '\uD83C\uDDF5\uD83C\uDDEA' },
-    { code: 'UZ', name: 'Uzbekistan', pop: 35000000, incomeGroup: 'LM', leM: 69.0, leF: 74.0, urban: 50, gdpPc: 2255, elec: 100, water: 97, sanit: 97, net: 90, fert: 3.5, age014: 31.3, age65: 6.1, region: 'Asia', culture: 'slavic', flag: '\uD83C\uDDFA\uD83C\uDDFF' },
-    { code: 'MY', name: 'Malaysia', pop: 34000000, incomeGroup: 'UM', leM: 73.0, leF: 78.0, urban: 78, gdpPc: 11972, elec: 100, water: 98, sanit: 96, net: 98, fert: 1.5, age014: 21.3, age65: 8.0, region: 'Asia', culture: 'southeast_asian', flag: '\uD83C\uDDF2\uD83C\uDDFE' },
-    { code: 'VE', name: 'Venezuela', pop: 28000000, incomeGroup: 'UM', leM: 68.0, leF: 76.0, urban: 88, gdpPc: 3474, elec: 100, water: 93, sanit: 98, net: 77, fert: 2.1, age014: 24.9, age65: 10.0, region: 'South America', culture: 'latin_american', flag: '\uD83C\uDDFB\uD83C\uDDEA' },
-    { code: 'MZ', name: 'Mozambique', pop: 33000000, incomeGroup: 'L', leM: 57.0, leF: 63.0, urban: 38, gdpPc: 608, elec: 37, water: 67, sanit: 39, net: 21, fert: 4.7, age014: 44.2, age65: 2.7, region: 'Africa', culture: 'sub_saharan', flag: '\uD83C\uDDF2\uD83C\uDDFF' },
-    { code: 'GH', name: 'Ghana', pop: 34000000, incomeGroup: 'LM', leM: 64.0, leF: 67.0, urban: 58, gdpPc: 2204, elec: 92, water: 90, sanit: 32, net: 72, fert: 3.3, age014: 35.4, age65: 3.8, region: 'Africa', culture: 'sub_saharan', flag: '\uD83C\uDDEC\uD83C\uDDED' },
-    { code: 'YE', name: 'Yemen', pop: 34000000, incomeGroup: 'L', leM: 64.0, leF: 68.0, urban: 39, gdpPc: 617, elec: 86, water: 75, sanit: 63, net: 18, fert: 4.5, age014: 41.0, age65: 2.5, region: 'Asia', culture: 'arab_middle_east', flag: '\uD83C\uDDFE\uD83C\uDDEA' },
-    { code: 'NP', name: 'Nepal', pop: 30000000, incomeGroup: 'LM', leM: 69.0, leF: 72.0, urban: 21, gdpPc: 1337, elec: 98, water: 94, sanit: 86, net: 46, fert: 2.0, age014: 28.1, age65: 6.6, region: 'Asia', culture: 'south_asian', flag: '\uD83C\uDDF3\uD83C\uDDF5' },
-    { code: 'CM', name: 'Cameroon', pop: 28000000, incomeGroup: 'LM', leM: 59.0, leF: 62.0, urban: 58, gdpPc: 1667, elec: 72, water: 71, sanit: 47, net: 46, fert: 4.3, age014: 41.1, age65: 2.8, region: 'Africa', culture: 'sub_saharan', flag: '\uD83C\uDDE8\uD83C\uDDF2' },
-    { code: 'CI', name: "Cote d'Ivoire", pop: 28000000, incomeGroup: 'LM', leM: 59.0, leF: 62.0, urban: 52, gdpPc: 2549, elec: 73, water: 77, sanit: 40, net: 41, fert: 4.2, age014: 40.5, age65: 2.7, region: 'Africa', culture: 'sub_saharan', flag: '\uD83C\uDDE8\uD83C\uDDEE' },
-    { code: 'AU', name: 'Australia', pop: 26000000, incomeGroup: 'H', leM: 81.3, leF: 85.4, urban: 86, gdpPc: 65100, elec: 100, water: 100, sanit: 100, net: 96, fert: 1.5, age014: 17.7, age65: 18.1, region: 'Oceania', culture: 'north_american_oceanian', flag: '\uD83C\uDDE6\uD83C\uDDFA' },
-    { code: 'NE', name: 'Niger', pop: 26000000, incomeGroup: 'L', leM: 60.0, leF: 63.0, urban: 17, gdpPc: 590, elec: 21, water: 53, sanit: 16, net: 16, fert: 5.9, age014: 46.2, age65: 2.6, region: 'Africa', culture: 'sub_saharan', flag: '\uD83C\uDDF3\uD83C\uDDEA' },
-    { code: 'TW', name: 'Taiwan', pop: 24000000, incomeGroup: 'H', leM: 77.0, leF: 84.0, urban: 80, gdpPc: 32800, elec: 100, water: 100, sanit: 100, net: 90, fert: 1.1, age014: null, age65: null, region: 'Asia', culture: 'east_asian', flag: '\uD83C\uDDF9\uD83C\uDDFC' },
-    { code: 'ML', name: 'Mali', pop: 23000000, incomeGroup: 'L', leM: 58.0, leF: 60.0, urban: 45, gdpPc: 833, elec: 50, water: 86, sanit: 48, net: 37, fert: 5.5, age014: 45.8, age65: 2.4, region: 'Africa', culture: 'sub_saharan', flag: '\uD83C\uDDF2\uD83C\uDDF1' },
-    { code: 'BF', name: 'Burkina Faso', pop: 23000000, incomeGroup: 'L', leM: 58.0, leF: 61.0, urban: 32, gdpPc: 893, elec: 34, water: 50, sanit: 32, net: 28, fert: 4.1, age014: 41.2, age65: 2.7, region: 'Africa', culture: 'sub_saharan', flag: '\uD83C\uDDE7\uD83C\uDDEB' },
-    { code: 'MW', name: 'Malawi', pop: 21000000, incomeGroup: 'L', leM: 61.0, leF: 67.0, urban: 18, gdpPc: 645, elec: 16, water: 73, sanit: 49, net: 19, fert: 3.6, age014: 40.1, age65: 2.6, region: 'Africa', culture: 'sub_saharan', flag: '\uD83C\uDDF2\uD83C\uDDFC' },
-    { code: 'SY', name: 'Syria', pop: 23000000, incomeGroup: 'L', leM: 68.0, leF: 76.0, urban: 55, gdpPc: 925, elec: 89, water: 94, sanit: 96, net: 34, fert: 2.7, age014: 28.4, age65: 4.8, region: 'Asia', culture: 'arab_middle_east', flag: '\uD83C\uDDF8\uD83C\uDDFE' },
-    { code: 'ZW', name: 'Zimbabwe', pop: 16000000, incomeGroup: 'LM', leM: 59.0, leF: 64.0, urban: 32, gdpPc: 1592, elec: 62, water: 67, sanit: 35, net: 42, fert: 3.7, age014: 40.3, age65: 3.6, region: 'Africa', culture: 'sub_saharan', flag: '\uD83C\uDDFF\uD83C\uDDFC' },
-    { code: 'RO', name: 'Romania', pop: 19000000, incomeGroup: 'H', leM: 71.0, leF: 79.0, urban: 54, gdpPc: 15787, elec: 100, water: 100, sanit: 91, net: 91, fert: 1.4, age014: 15.6, age65: 20.1, region: 'Europe', culture: 'east_european', flag: '\uD83C\uDDF7\uD83C\uDDF4' },
-    { code: 'VN', name: 'Vietnam', pop: 98000000, incomeGroup: 'LM', leM: 71.0, leF: 79.0, urban: 39, gdpPc: 4164, elec: 100, water: 99, sanit: 95, net: 84, fert: 1.9, age014: 22.9, age65: 9.5, region: 'Asia', culture: 'southeast_asian', flag: '\uD83C\uDDFB\uD83C\uDDF3' },
-    { code: 'KR', name: 'South Korea', pop: 52000000, incomeGroup: 'H', leM: 80.3, leF: 86.1, urban: 81, gdpPc: 32255, elec: 100, water: 100, sanit: 100, net: 98, fert: 0.7, age014: 10.2, age65: 20.3, region: 'Asia', culture: 'east_asian', flag: '\uD83C\uDDF0\uD83C\uDDF7' },
-    { code: 'MM', name: 'Myanmar', pop: 54000000, incomeGroup: 'LM', leM: 64.0, leF: 70.0, urban: 32, gdpPc: 1187, elec: 80, water: 86, sanit: 74, net: 45, fert: 2.1, age014: 24.1, age65: 7.5, region: 'Asia', culture: 'southeast_asian', flag: '\uD83C\uDDF2\uD83C\uDDF2' },
-    { code: 'ZA', name: 'South Africa', pop: 60000000, incomeGroup: 'UM', leM: 62.0, leF: 68.0, urban: 68, gdpPc: 6776, elec: 90, water: 90, sanit: 77, net: 78, fert: 2.2, age014: 25.7, age65: 6.9, region: 'Africa', culture: 'sub_saharan', flag: '\uD83C\uDDFF\uD83C\uDDE6' },
-    { code: 'IR', name: 'Iran', pop: 89000000, incomeGroup: 'LM', leM: 75.0, leF: 78.0, urban: 76, gdpPc: 4388, elec: 100, water: 98, sanit: 91, net: 85, fert: 1.7, age014: 22.0, age65: 8.6, region: 'Asia', culture: 'arab_middle_east', flag: '\uD83C\uDDEE\uD83C\uDDF7' },
-    { code: 'UA', name: 'Ukraine', pop: 38000000, incomeGroup: 'LM', leM: 67.0, leF: 77.0, urban: 70, gdpPc: 4534, elec: 100, water: 93, sanit: 98, net: 82, fert: 1.0, age014: 13.7, age65: 19.0, region: 'Europe', culture: 'slavic', flag: '\uD83C\uDDFA\uD83C\uDDE6' },
-    { code: 'AO', name: 'Angola', pop: 36000000, incomeGroup: 'LM', leM: 59.0, leF: 65.0, urban: 68, gdpPc: 3000, elec: 56, water: 68, sanit: 50, net: 41, fert: 5.0, age014: 44.1, age65: 2.9, region: 'Africa', culture: 'sub_saharan', flag: '\uD83C\uDDE6\uD83C\uDDF4' },
-    { code: 'CL', name: 'Chile', pop: 20000000, incomeGroup: 'H', leM: 78.0, leF: 82.0, urban: 88, gdpPc: 15355, elec: 99, water: 99, sanit: 100, net: 96, fert: 1.1, age014: 16.5, age65: 14.6, region: 'South America', culture: 'latin_american', flag: '\uD83C\uDDE8\uD83C\uDDF1' },
-    { code: 'KZ', name: 'Kazakhstan', pop: 20000000, incomeGroup: 'UM', leM: 69.0, leF: 77.0, urban: 58, gdpPc: 11244, elec: 100, water: 98, sanit: 98, net: 93, fert: 3.0, age014: 29.1, age65: 9.0, region: 'Asia', culture: 'slavic', flag: '\uD83C\uDDF0\uD83C\uDDFF' },
-    { code: 'ZM', name: 'Zambia', pop: 20000000, incomeGroup: 'LM', leM: 60.0, leF: 66.0, urban: 46, gdpPc: 1487, elec: 54, water: 73, sanit: 37, net: 17, fert: 4.0, age014: 41.0, age65: 2.0, region: 'Africa', culture: 'sub_saharan', flag: '\uD83C\uDDFF\uD83C\uDDF2' },
-    { code: 'SN', name: 'Senegal', pop: 18000000, incomeGroup: 'LM', leM: 66.0, leF: 70.0, urban: 49, gdpPc: 1637, elec: 83, water: 88, sanit: 63, net: 60, fert: 3.8, age014: 37.7, age65: 3.6, region: 'Africa', culture: 'sub_saharan', flag: '\uD83C\uDDF8\uD83C\uDDF3' },
-    { code: 'GT', name: 'Guatemala', pop: 18000000, incomeGroup: 'UM', leM: 69.0, leF: 75.0, urban: 53, gdpPc: 5473, elec: 91, water: 93, sanit: 71, net: 60, fert: 2.3, age014: 31.0, age65: 5.0, region: 'North America', culture: 'latin_american', flag: '\uD83C\uDDEC\uD83C\uDDF9' },
-    { code: 'BO', name: 'Bolivia', pop: 12000000, incomeGroup: 'LM', leM: 67.0, leF: 72.0, urban: 70, gdpPc: 3600, elec: 97, water: 93, sanit: 72, net: 80, fert: 2.5, age014: 29.4, age65: 5.7, region: 'South America', culture: 'latin_american', flag: '\uD83C\uDDE7\uD83C\uDDF4' },
-    { code: 'HT', name: 'Haiti', pop: 12000000, incomeGroup: 'L', leM: 62.0, leF: 67.0, urban: 58, gdpPc: 1748, elec: 54, water: 73, sanit: 29, net: 48, fert: 2.6, age014: 30.8, age65: 4.8, region: 'North America', culture: 'latin_american', flag: '\uD83C\uDDED\uD83C\uDDF9' },
-    { code: 'EC', name: 'Ecuador', pop: 18000000, incomeGroup: 'UM', leM: 74.0, leF: 79.0, urban: 64, gdpPc: 6391, elec: 99, water: 92, sanit: 91, net: 77, fert: 1.8, age014: 23.9, age65: 8.6, region: 'South America', culture: 'latin_american', flag: '\uD83C\uDDEA\uD83C\uDDE8' },
-    { code: 'KH', name: 'Cambodia', pop: 17000000, incomeGroup: 'LM', leM: 68.0, leF: 73.0, urban: 25, gdpPc: 1785, elec: 99, water: 83, sanit: 83, net: 69, fert: 2.5, age014: 29.5, age65: 6.4, region: 'Asia', culture: 'southeast_asian', flag: '\uD83C\uDDF0\uD83C\uDDED' },
-    { code: 'HN', name: 'Honduras', pop: 10000000, incomeGroup: 'LM', leM: 72.0, leF: 77.0, urban: 59, gdpPc: 3040, elec: 96, water: 96, sanit: 88, net: 59, fert: 2.5, age014: 30.3, age65: 4.5, region: 'North America', culture: 'latin_american', flag: '\uD83C\uDDED\uD83C\uDDF3' },
-    { code: 'PG', name: 'Papua New Guinea', pop: 10000000, incomeGroup: 'LM', leM: 63.0, leF: 67.0, urban: 13, gdpPc: 2673, elec: 43, water: 53, sanit: 24, net: 19, fert: 3.1, age014: 33.1, age65: 3.6, region: 'Oceania', culture: 'southeast_asian', flag: '\uD83C\uDDF5\uD83C\uDDEC' },
-    { code: 'RW', name: 'Rwanda', pop: 14000000, incomeGroup: 'L', leM: 67.0, leF: 71.0, urban: 18, gdpPc: 966, elec: 72, water: 61, sanit: 81, net: 32, fert: 3.6, age014: 37.0, age65: 4.0, region: 'Africa', culture: 'sub_saharan', flag: '\uD83C\uDDF7\uD83C\uDDFC' },
-    { code: 'BJ', name: 'Benin', pop: 13000000, incomeGroup: 'LM', leM: 59.0, leF: 62.0, urban: 49, gdpPc: 1428, elec: 59, water: 70, sanit: 22, net: 34, fert: 4.5, age014: 41.3, age65: 3.2, region: 'Africa', culture: 'sub_saharan', flag: '\uD83C\uDDE7\uD83C\uDDEF' },
-    { code: 'TN', name: 'Tunisia', pop: 12000000, incomeGroup: 'LM', leM: 74.0, leF: 78.0, urban: 70, gdpPc: 3807, elec: 100, water: 97, sanit: 99, net: 77, fert: 1.8, age014: 23.6, age65: 9.9, region: 'Africa', culture: 'arab_middle_east', flag: '\uD83C\uDDF9\uD83C\uDDF3' },
-    { code: 'SO', name: 'Somalia', pop: 18000000, incomeGroup: 'L', leM: 55.0, leF: 59.0, urban: 47, gdpPc: 592, elec: 54, water: 75, sanit: 44, net: 28, fert: 6.0, age014: 46.6, age65: 2.6, region: 'Africa', culture: 'sub_saharan', flag: '\uD83C\uDDF8\uD83C\uDDF4' },
-    { code: 'PT', name: 'Portugal', pop: 10000000, incomeGroup: 'H', leM: 78.0, leF: 84.0, urban: 67, gdpPc: 24540, elec: 100, water: 99, sanit: 100, net: 89, fert: 1.4, age014: 12.7, age65: 24.9, region: 'Europe', culture: 'west_european', flag: '\uD83C\uDDF5\uD83C\uDDF9' },
-    { code: 'CZ', name: 'Czechia', pop: 11000000, incomeGroup: 'H', leM: 76.0, leF: 82.0, urban: 74, gdpPc: 27638, elec: 100, water: 99, sanit: 99, net: 88, fert: 1.4, age014: 15.1, age65: 21.2, region: 'Europe', culture: 'east_european', flag: '\uD83C\uDDE8\uD83C\uDDFF' },
-    { code: 'GR', name: 'Greece', pop: 10000000, incomeGroup: 'H', leM: 79.0, leF: 84.0, urban: 80, gdpPc: 20867, elec: 100, water: 100, sanit: 99, net: 86, fert: 1.2, age014: 12.9, age65: 24.4, region: 'Europe', culture: 'west_european', flag: '\uD83C\uDDEC\uD83C\uDDF7' },
-    { code: 'JO', name: 'Jordan', pop: 11000000, incomeGroup: 'UM', leM: 73.0, leF: 77.0, urban: 92, gdpPc: 4483, elec: 100, water: 99, sanit: 96, net: 96, fert: 2.6, age014: 30.2, age65: 4.8, region: 'Asia', culture: 'arab_middle_east', flag: '\uD83C\uDDEF\uD83C\uDDF4' },
-    { code: 'BE', name: 'Belgium', pop: 12000000, incomeGroup: 'H', leM: 79.0, leF: 84.0, urban: 98, gdpPc: 49927, elec: 100, water: 100, sanit: 100, net: 96, fert: 1.4, age014: 15.7, age65: 21.0, region: 'Europe', culture: 'west_european', flag: '\uD83C\uDDE7\uD83C\uDDEA' },
-    { code: 'NL', name: 'Netherlands', pop: 18000000, incomeGroup: 'H', leM: 80.0, leF: 83.0, urban: 93, gdpPc: 55985, elec: 100, water: 100, sanit: 98, net: 97, fert: 1.4, age014: 14.9, age65: 20.9, region: 'Europe', culture: 'west_european', flag: '\uD83C\uDDF3\uD83C\uDDF1' },
-    { code: 'SE', name: 'Sweden', pop: 10000000, incomeGroup: 'H', leM: 81.0, leF: 85.0, urban: 88, gdpPc: 56424, elec: 100, water: 100, sanit: 99, net: 96, fert: 1.4, age014: 16.7, age65: 20.9, region: 'Europe', culture: 'west_european', flag: '\uD83C\uDDF8\uD83C\uDDEA' },
-    { code: 'CH', name: 'Switzerland', pop: 9000000, incomeGroup: 'H', leM: 82.0, leF: 86.0, urban: 74, gdpPc: 92434, elec: 100, water: 100, sanit: 100, net: 97, fert: 1.3, age014: 14.9, age65: 20.4, region: 'Europe', culture: 'west_european', flag: '\uD83C\uDDE8\uD83C\uDDED' },
-    { code: 'AT', name: 'Austria', pop: 9000000, incomeGroup: 'H', leM: 79.0, leF: 84.0, urban: 59, gdpPc: 52085, elec: 100, water: 100, sanit: 100, net: 92, fert: 1.3, age014: 14.1, age65: 21.1, region: 'Europe', culture: 'west_european', flag: '\uD83C\uDDE6\uD83C\uDDF9' },
-    { code: 'IL', name: 'Israel', pop: 9700000, incomeGroup: 'H', leM: 81.0, leF: 85.0, urban: 93, gdpPc: 54930, elec: 100, water: 100, sanit: 100, net: 88, fert: 2.9, age014: 27.2, age65: 12.7, region: 'Asia', culture: 'arab_middle_east', flag: '\uD83C\uDDEE\uD83C\uDDF1' },
-    { code: 'NO', name: 'Norway', pop: 5500000, incomeGroup: 'H', leM: 81.0, leF: 84.0, urban: 83, gdpPc: 106149, elec: 100, water: 100, sanit: 98, net: 99, fert: 1.4, age014: 15.9, age65: 19.1, region: 'Europe', culture: 'west_european', flag: '\uD83C\uDDF3\uD83C\uDDF4' },
-    { code: 'AE', name: 'United Arab Emirates', pop: 9400000, incomeGroup: 'H', leM: 78.0, leF: 80.0, urban: 87, gdpPc: 53708, elec: 100, water: 100, sanit: 99, net: 100, fert: 1.2, age014: 16.0, age65: 1.8, region: 'Asia', culture: 'arab_middle_east', flag: '\uD83C\uDDE6\uD83C\uDDEA' },
-    { code: 'SG', name: 'Singapore', pop: 5900000, incomeGroup: 'H', leM: 81.0, leF: 86.0, urban: 100, gdpPc: 82807, elec: 100, water: 100, sanit: 100, net: 94, fert: 1.0, age014: 11.7, age65: 14.2, region: 'Asia', culture: 'east_asian', flag: '\uD83C\uDDF8\uD83C\uDDEC' }
-  ];
-
-  // 2. static fallback values, keyed by ISO2 (used offline and to fill gaps
-  // the World Bank does not cover: display names, name cultures, Taiwan).
-  var STATIC_BY_CODE = {};
-  STATIC_COUNTRIES.forEach(function (c) { STATIC_BY_CODE[c.code] = c; });
+  // 1. display-name / region / name-culture overrides, keyed by country code.
+  // [display name, region label, name culture]. Countries not listed use the
+  // World Bank name and region, and a name culture inferred from the region.
+  var OVERRIDES = {
+    IN: ['India', 'Asia', 'south_asian'],
+    CN: ['China', 'Asia', 'east_asian'],
+    US: ['United States', 'North America', 'north_american_oceanian'],
+    ID: ['Indonesia', 'Asia', 'southeast_asian'],
+    PK: ['Pakistan', 'Asia', 'south_asian'],
+    BR: ['Brazil', 'South America', 'latin_american'],
+    NG: ['Nigeria', 'Africa', 'sub_saharan'],
+    BD: ['Bangladesh', 'Asia', 'south_asian'],
+    RU: ['Russia', 'Europe', 'slavic'],
+    ET: ['Ethiopia', 'Africa', 'sub_saharan'],
+    MX: ['Mexico', 'North America', 'latin_american'],
+    JP: ['Japan', 'Asia', 'east_asian'],
+    PH: ['Philippines', 'Asia', 'southeast_asian'],
+    CD: ['DR Congo', 'Africa', 'sub_saharan'],
+    EG: ['Egypt', 'Africa', 'arab_middle_east'],
+    DE: ['Germany', 'Europe', 'west_european'],
+    TZ: ['Tanzania', 'Africa', 'sub_saharan'],
+    TR: ['Turkey', 'Asia', 'arab_middle_east'],
+    TH: ['Thailand', 'Asia', 'southeast_asian'],
+    GB: ['United Kingdom', 'Europe', 'west_european'],
+    FR: ['France', 'Europe', 'west_european'],
+    KE: ['Kenya', 'Africa', 'sub_saharan'],
+    IT: ['Italy', 'Europe', 'west_european'],
+    CO: ['Colombia', 'South America', 'latin_american'],
+    ES: ['Spain', 'Europe', 'west_european'],
+    UG: ['Uganda', 'Africa', 'sub_saharan'],
+    AR: ['Argentina', 'South America', 'latin_american'],
+    DZ: ['Algeria', 'Africa', 'arab_middle_east'],
+    SD: ['Sudan', 'Africa', 'arab_middle_east'],
+    IQ: ['Iraq', 'Asia', 'arab_middle_east'],
+    AF: ['Afghanistan', 'Asia', 'south_asian'],
+    PL: ['Poland', 'Europe', 'east_european'],
+    CA: ['Canada', 'North America', 'north_american_oceanian'],
+    MA: ['Morocco', 'Africa', 'arab_middle_east'],
+    SA: ['Saudi Arabia', 'Asia', 'arab_middle_east'],
+    PE: ['Peru', 'South America', 'latin_american'],
+    UZ: ['Uzbekistan', 'Asia', 'slavic'],
+    MY: ['Malaysia', 'Asia', 'southeast_asian'],
+    VE: ['Venezuela', 'South America', 'latin_american'],
+    MZ: ['Mozambique', 'Africa', 'sub_saharan'],
+    GH: ['Ghana', 'Africa', 'sub_saharan'],
+    YE: ['Yemen', 'Asia', 'arab_middle_east'],
+    NP: ['Nepal', 'Asia', 'south_asian'],
+    CM: ['Cameroon', 'Africa', 'sub_saharan'],
+    CI: ["Cote d'Ivoire", 'Africa', 'sub_saharan'],
+    AU: ['Australia', 'Oceania', 'north_american_oceanian'],
+    NE: ['Niger', 'Africa', 'sub_saharan'],
+    TW: ['Taiwan', 'Asia', 'east_asian'],
+    ML: ['Mali', 'Africa', 'sub_saharan'],
+    BF: ['Burkina Faso', 'Africa', 'sub_saharan'],
+    MW: ['Malawi', 'Africa', 'sub_saharan'],
+    SY: ['Syria', 'Asia', 'arab_middle_east'],
+    ZW: ['Zimbabwe', 'Africa', 'sub_saharan'],
+    RO: ['Romania', 'Europe', 'east_european'],
+    VN: ['Vietnam', 'Asia', 'southeast_asian'],
+    KR: ['South Korea', 'Asia', 'east_asian'],
+    MM: ['Myanmar', 'Asia', 'southeast_asian'],
+    ZA: ['South Africa', 'Africa', 'sub_saharan'],
+    IR: ['Iran', 'Asia', 'arab_middle_east'],
+    UA: ['Ukraine', 'Europe', 'slavic'],
+    AO: ['Angola', 'Africa', 'sub_saharan'],
+    CL: ['Chile', 'South America', 'latin_american'],
+    KZ: ['Kazakhstan', 'Asia', 'slavic'],
+    ZM: ['Zambia', 'Africa', 'sub_saharan'],
+    SN: ['Senegal', 'Africa', 'sub_saharan'],
+    GT: ['Guatemala', 'North America', 'latin_american'],
+    BO: ['Bolivia', 'South America', 'latin_american'],
+    HT: ['Haiti', 'North America', 'latin_american'],
+    EC: ['Ecuador', 'South America', 'latin_american'],
+    KH: ['Cambodia', 'Asia', 'southeast_asian'],
+    HN: ['Honduras', 'North America', 'latin_american'],
+    PG: ['Papua New Guinea', 'Oceania', 'southeast_asian'],
+    RW: ['Rwanda', 'Africa', 'sub_saharan'],
+    BJ: ['Benin', 'Africa', 'sub_saharan'],
+    TN: ['Tunisia', 'Africa', 'arab_middle_east'],
+    SO: ['Somalia', 'Africa', 'sub_saharan'],
+    PT: ['Portugal', 'Europe', 'west_european'],
+    CZ: ['Czechia', 'Europe', 'east_european'],
+    GR: ['Greece', 'Europe', 'west_european'],
+    JO: ['Jordan', 'Asia', 'arab_middle_east'],
+    BE: ['Belgium', 'Europe', 'west_european'],
+    NL: ['Netherlands', 'Europe', 'west_european'],
+    SE: ['Sweden', 'Europe', 'west_european'],
+    CH: ['Switzerland', 'Europe', 'west_european'],
+    AT: ['Austria', 'Europe', 'west_european'],
+    IL: ['Israel', 'Asia', 'arab_middle_east'],
+    NO: ['Norway', 'Europe', 'west_european'],
+    AE: ['United Arab Emirates', 'Asia', 'arab_middle_east'],
+    SG: ['Singapore', 'Asia', 'east_asian']
+  };
 
   // World Bank income Level id -> our income group.
   var INCOME_MAP = { LIC: 'L', LMC: 'LM', UMC: 'UM', HIC: 'H' };
@@ -149,7 +140,9 @@
     }
   }
 
-  // 3. model constants: age bands/weights
+  // 3. model constants: age bands/weights. These six-band tables are no longer
+  // the normal age model (that is the single-year WPP distribution, ageDist);
+  // they remain only as the documented fallback for a country without one.
   var AGE_BANDS = [
     { min: 0, max: 4 },
     { min: 5, max: 14 },
@@ -220,179 +213,302 @@
     }
   };
 
-  // 6. reactive data load status + loaders
+  // 6. data: built-in snapshot, live World Bank overlay, status, cache
+  var SNAPSHOT = App.SNAPSHOT || null;
   var DATA_LOAD_STATUS = { source: 'static', message: 'Using built-in data', loading: false };
-  var _countries = STATIC_COUNTRIES.slice();
-  var CACHE_KEY = 'randomLife.countries.v5';
+  var CACHE_KEY = 'randomLife.countries.v6';
+  var OLD_CACHE_KEYS = ['randomLife.countries.v5'];
   var CACHE_TTL = 1000 * 60 * 60 * 12; // 12 hours
+  var FETCH_TIMEOUT = 20000;           // ms; a hung request falls back per variable
 
+  // The only variables a live World Bank response may touch (World Bank owned).
+  // Everything else (UN WPP / UN WUP / ILO) is snapshot-only.
   var WB_INDICATORS = {
-    pop: 'SP.POP.TOTL',
-    leM: 'SP.DYN.LE00.MA.IN',
-    leF: 'SP.DYN.LE00.FE.IN',
-    urban: 'SP.URB.TOTL.IN.ZS',
     gdpPc: 'NY.GDP.PCAP.CD',
     elec: 'EG.ELC.ACCS.ZS',
     water: 'SH.H2O.BASW.ZS',
     sanit: 'SH.STA.BASS.ZS',
-    net: 'IT.NET.USER.ZS',
-    fert: 'SP.DYN.TFRT.IN',
-    age014: 'SP.POP.0014.TO.ZS',
-    age65: 'SP.POP.65UP.TO.ZS',
-    femaleShare: 'SP.POP.TOTL.FE.ZS',
-    agrShare: 'SL.AGR.EMPL.ZS',
-    indShare: 'SL.IND.EMPL.ZS',
-    srvShare: 'SL.SRV.EMPL.ZS',
-    unemp: 'SL.UEM.TOTL.ZS'
+    net: 'IT.NET.USER.ZS'
   };
+  var WB_FIELDS = Object.keys(WB_INDICATORS);
+  var WB_DATASETS = WB_FIELDS.length + 1; // five indicators + country metadata
 
+  // Plausible ranges used to validate every number before it is used.
+  var RANGES = {
+    pop: [1, 3e9], femaleShare: [5, 95], leM: [20, 100], leF: [20, 105], urban: [0, 100],
+    fert: [0, 12], agrShare: [0, 100], indShare: [0, 100], srvShare: [0, 100],
+    unemp: [0, 100], gdpPc: [1, 1000000], elec: [0, 100.5], water: [0, 100.5],
+    sanit: [0, 100.5], net: [0, 100.5], age014: [0, 100], age65: [0, 100]
+  };
+  var NUMERIC_FIELDS = ['pop', 'femaleShare', 'leM', 'leF', 'urban', 'fert', 'agrShare',
+    'indShare', 'srvShare', 'unemp', 'gdpPc', 'elec', 'water', 'sanit', 'net', 'age014', 'age65'];
+  var AGE_COUNT = 101;
+
+  function inRange(v, field) {
+    var r = RANGES[field];
+    return typeof v === 'number' && isFinite(v) && v >= r[0] && v <= r[1];
+  }
+
+  // Single-year age distribution: 101 finite non-negative numbers (ages 0..100,
+  // 100 = 100+) normalised to sum to 1. Returns null when invalid, which makes
+  // the generator use the 6-band fallback for that country.
+  function normaliseAgeDist(arr, scale) {
+    if (!Array.isArray(arr) || arr.length !== AGE_COUNT) return null;
+    var sum = 0, i;
+    for (i = 0; i < AGE_COUNT; i++) {
+      var v = arr[i];
+      if (typeof v !== 'number' || !isFinite(v) || v < 0) return null;
+      sum += v;
+    }
+    if (!(sum > 0)) return null;
+    if (scale && Math.abs(sum - scale) / scale > 0.01) return null;
+    var dist = new Array(AGE_COUNT);
+    for (i = 0; i < AGE_COUNT; i++) dist[i] = arr[i] / sum;
+    return dist;
+  }
+
+  function validIncomeGroup(g) {
+    return g === 'L' || g === 'LM' || g === 'UM' || g === 'H';
+  }
+
+  function copyCountry(c) {
+    var copy = {};
+    for (var p in c) { if (Object.prototype.hasOwnProperty.call(c, p)) copy[p] = c[p]; }
+    return copy;
+  }
+
+  // One built-in country object from one snapshot record. Field names are the
+  // ones the generator and UI already read.
+  function countryFromRecord(rec, scale) {
+    var code = String(rec.code).toUpperCase();
+    var over = OVERRIDES[code];
+    var incomeGroup = validIncomeGroup(rec.incomeGroup) ? rec.incomeGroup : 'LM';
+    var c = {
+      code: code,
+      name: over ? over[0] : String(rec.name),
+      incomeGroup: incomeGroup,
+      region: over ? over[1] : (rec.region ? String(rec.region) : 'Unknown'),
+      culture: over ? over[2] : cultureForRegion(rec.rid, incomeGroup),
+      rid: rec.rid || null,
+      flag: flagEmoji(code),
+      ageDist: normaliseAgeDist(rec.age, scale)
+    };
+    NUMERIC_FIELDS.forEach(function (f) {
+      c[f] = inRange(rec[f], f) ? rec[f] : null;
+    });
+    return c;
+  }
+
+  function buildSnapshotCountries() {
+    if (!SNAPSHOT || !Array.isArray(SNAPSHOT.countries)) return [];
+    var scale = SNAPSHOT.meta && SNAPSHOT.meta.ageQuantisation;
+    var seen = {};
+    var list = [];
+    SNAPSHOT.countries.forEach(function (rec) {
+      if (!rec || typeof rec.code !== 'string' || !/^[A-Za-z]{2}$/.test(rec.code)) return;
+      var c = countryFromRecord(rec, scale);
+      // Never produce a person from a country without a usable population.
+      if (!(c.pop > 0) || seen[c.code]) return;
+      seen[c.code] = true;
+      list.push(c);
+    });
+    return list;
+  }
+
+  // The built-in list, kept pristine; _countries is this list plus any live overlay.
+  var STATIC_COUNTRIES = buildSnapshotCountries();
+  var _countries = STATIC_COUNTRIES.slice();
+
+  function knownCodes() {
+    var known = {};
+    STATIC_COUNTRIES.forEach(function (c) { known[c.code] = true; });
+    return known;
+  }
+
+  // ---- status wording (truthful about the real mix) ----
+  function snapshotLabel() {
+    var parts = [];
+    var sources = SNAPSHOT && SNAPSHOT.meta && SNAPSHOT.meta.sources;
+    if (Array.isArray(sources)) {
+      sources.forEach(function (s) { if (s && s.id !== 'wb' && s.short) parts.push(s.short); });
+    }
+    return parts.length ? parts.join(', ') : 'UN and ILO data';
+  }
+
+  function snapshotDate() {
+    return (SNAPSHOT && SNAPSHOT.meta && SNAPSHOT.meta.generated) || 'unknown date';
+  }
+
+  function staticMessage() {
+    return 'Using built-in snapshot: ' + snapshotLabel() + ', World Bank (retrieved ' + snapshotDate() + ')';
+  }
+
+  function overlayCount(overlay) {
+    return (overlay.vars ? overlay.vars.length : 0) + (overlay.metaOk ? 1 : 0);
+  }
+
+  function liveMessage(overlay, cached) {
+    var n = overlayCount(overlay);
+    var what = n >= WB_DATASETS ? 'World Bank data' :
+      'World Bank data (' + n + ' of ' + WB_DATASETS + ' datasets)';
+    return 'Using ' + (cached ? 'cached ' : 'live ') + what + ' with built-in snapshot: ' + snapshotLabel();
+  }
+
+  // ---- live World Bank overlay ----
+  // overlay = { ts, vars: ['gdpPc', ...], values: { gdpPc: { IN: 2411, ... } },
+  //             metaOk: bool, meta: { IN: { incomeGroup, region, rid } } }
   function wbUrl(indicator) {
     return 'https://api.worldbank.org/v2/country/all/indicator/' + indicator +
       '?format=json&mrv=5&per_page=1500';
   }
 
-  function buildMapByIso2(json) {
+  function fetchJson(url) {
+    var opts = {};
+    var timer = null;
+    if (typeof AbortController === 'function') {
+      var ctl = new AbortController();
+      opts.signal = ctl.signal;
+      timer = setTimeout(function () { ctl.abort(); }, FETCH_TIMEOUT);
+    }
+    function done() { if (timer) clearTimeout(timer); }
+    return fetch(url, opts).then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    }).then(function (json) { done(); return json; }, function (err) { done(); throw err; });
+  }
+
+  // Same rounding the live fetch has always applied (whole numbers).
+  function roundLive(field, v) {
+    var r = Math.round(v);
+    return (field !== 'gdpPc' && r > 100) ? 100 : r;
+  }
+
+  // Validate one indicator response; throws when it is not usable.
+  function parseIndicator(field, json, known) {
+    var ind = WB_INDICATORS[field];
+    if (!Array.isArray(json) || json.length < 2 || !Array.isArray(json[1])) {
+      throw new Error('unexpected response shape');
+    }
     var map = {};
-    if (!Array.isArray(json) || json.length < 2 || !Array.isArray(json[1])) return map;
+    var good = 0, bad = 0;
     json[1].forEach(function (row) {
-      if (row && row.country && row.country.id && row.value != null) {
-        if (map[row.country.id] === undefined) {
-          map[row.country.id] = row.value;
-        }
-      }
+      if (!row || !row.country || typeof row.country.id !== 'string' ||
+          !row.indicator || row.indicator.id !== ind) { bad++; return; }
+      var code = row.country.id.toUpperCase();
+      if (!known[code]) return;            // aggregates / unknown codes are ignored
+      if (row.value == null) return;       // a missing value is normal
+      var v = row.value;
+      if (!inRange(v, field)) { bad++; return; }
+      if (map[code] === undefined) { map[code] = roundLive(field, v); good++; }
     });
+    if (bad > 0 && bad > 0.05 * (good + bad)) throw new Error('too many invalid values');
+    if (good < 100) throw new Error('too few countries (' + good + ')');
     return map;
   }
 
-  function fetchIndicatorRaw(indicator) {
-    return fetch(wbUrl(indicator)).then(function (res) {
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      return res.json();
+  // Validate the country metadata (income group, region); throws when unusable.
+  function parseMeta(json, known) {
+    if (!Array.isArray(json) || json.length < 2 || !Array.isArray(json[1])) {
+      throw new Error('unexpected response shape');
+    }
+    var meta = {};
+    var good = 0;
+    json[1].forEach(function (m) {
+      if (!m || typeof m.iso2Code !== 'string' || !/^[A-Za-z]{2}$/.test(m.iso2Code)) return;
+      var code = m.iso2Code.toUpperCase();
+      if (!known[code] || meta[code]) return;
+      var ig = m.incomeLevel && INCOME_MAP[m.incomeLevel.id];
+      if (!ig) return;
+      var entry = { incomeGroup: ig };
+      if (m.region && typeof m.region.value === 'string' && m.region.value.trim() &&
+          m.region.value.length <= 80 && typeof m.region.id === 'string' && /^[A-Z]{3}$/.test(m.region.id)) {
+        entry.region = m.region.value.trim();
+        entry.rid = m.region.id;
+      }
+      meta[code] = entry;
+      good++;
     });
+    if (good < 100) throw new Error('too few countries (' + good + ')');
+    return meta;
   }
 
-  function fetchCountryMeta() {
-    return fetch('https://api.worldbank.org/v2/country?format=json&per_page=300').then(function (res) {
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      return res.json();
-    }).then(function (json) {
-      if (!Array.isArray(json) || !Array.isArray(json[1])) return [];
-      return json[1].filter(function (c) {
-        return c && typeof c.iso2Code === 'string' && /^[A-Za-z]{2}$/.test(c.iso2Code) &&
-          c.region && c.region.id !== 'NA';
+  // Merge an overlay onto the built-in list. Every value is validated again here
+  // (so a corrupt cache entry cannot inject bad data) and applied per variable.
+  function applyOverlay(overlay) {
+    var base = STATIC_COUNTRIES;
+    var merged = base.map(function (c) {
+      var copy = copyCountry(c);
+      var code = c.code;
+      WB_FIELDS.forEach(function (f) {
+        var layer = overlay.values && overlay.values[f];
+        var v = layer && layer[code];
+        if (inRange(v, f)) copy[f] = roundLive(f, v);
+      });
+      var m = overlay.metaOk && overlay.meta && overlay.meta[code];
+      if (m) {
+        if (validIncomeGroup(m.incomeGroup)) copy.incomeGroup = m.incomeGroup;
+        if (!OVERRIDES[code]) {
+          if (typeof m.region === 'string' && m.region) copy.region = m.region;
+          if (typeof m.rid === 'string' && /^[A-Z]{3}$/.test(m.rid)) copy.rid = m.rid;
+          copy.culture = cultureForRegion(copy.rid, copy.incomeGroup);
+        }
+      }
+      return copy;
+    });
+    return merged;
+  }
+
+  // Fetch the World Bank datasets independently; resolve to an overlay holding
+  // whatever validated, or null when nothing did.
+  function fetchOverlay() {
+    var known = knownCodes();
+    var jobs = WB_FIELDS.map(function (f) {
+      return fetchJson(wbUrl(WB_INDICATORS[f])).then(function (json) {
+        return parseIndicator(f, json, known);
       });
     });
-  }
-
-  // Base country list: every World Bank member from live metadata (name,
-  // income group, region) overlaid on static fallback values, so newly added
-  // or changed countries appear without any manual update. Falls back to the
-  // static table when the metadata request fails.
-  function baseCountries(metaList) {
-    function copyStatic(c) {
-      var copy = {};
-      for (var p in c) { if (Object.prototype.hasOwnProperty.call(c, p)) copy[p] = c[p]; }
-      return copy;
-    }
-    if (!metaList || !metaList.length) return STATIC_COUNTRIES.map(copyStatic);
-    var seen = {};
-    var list = metaList.map(function (m) {
-      var code = m.iso2Code.toUpperCase();
-      var known = STATIC_BY_CODE[code];
-      var incomeGroup = (m.incomeLevel && INCOME_MAP[m.incomeLevel.id]) ||
-        (known && known.incomeGroup) || 'LM';
-      var base = known ? copyStatic(known) : {
-        pop: 0, leM: null, leF: null, urban: null, gdpPc: null,
-        elec: null, water: null, sanit: null, net: null, fert: null,
-        age014: null, age65: null, femaleShare: null,
-        agrShare: null, indShare: null, srvShare: null, unemp: null
-      };
-      base.code = code;
-      base.name = (known && known.name) || m.name;
-      base.incomeGroup = incomeGroup;
-      base.region = (known && known.region) ||
-        (m.region && m.region.value ? m.region.value.trim() : 'Unknown');
-      base.culture = (known && known.culture) ||
-        cultureForRegion(m.region && m.region.id, incomeGroup);
-      base.flag = flagEmoji(code);
-      seen[code] = true;
-      return base;
-    });
-    // Taiwan is not a World Bank member - keep its static estimate.
-    if (!seen.TW && STATIC_BY_CODE.TW) list.push(copyStatic(STATIC_BY_CODE.TW));
-    return list;
-  }
-
-  function fetchLiveData() {
-    var keys = Object.keys(WB_INDICATORS);
-    var promises = keys.map(function (k) { return fetchIndicatorRaw(WB_INDICATORS[k]); });
-    promises.push(fetchCountryMeta().then(function (m) { return { meta: m }; },
-      function (err) {
-        console.warn('World Bank country list failed:', err && err.message);
-        return { meta: [] };
-      }));
-
-    return Promise.allSettled(promises).then(function (results) {
-      var metaList = [];
-      var metaRes = results[results.length - 1];
-      if (metaRes.status === 'fulfilled' && metaRes.value && metaRes.value.meta) {
-        metaList = metaRes.value.meta;
-      }
-      results = results.slice(0, keys.length);
-      var maps = {};
-      var anyOk = false;
+    jobs.push(fetchJson('https://api.worldbank.org/v2/country?format=json&per_page=300').then(function (json) {
+      return parseMeta(json, known);
+    }));
+    return Promise.allSettled(jobs).then(function (results) {
+      var overlay = { ts: Date.now(), vars: [], values: {}, metaOk: false, meta: {} };
       results.forEach(function (r, i) {
-        var key = keys[i];
+        var isMeta = i === WB_FIELDS.length;
         if (r.status === 'fulfilled') {
-          maps[key] = buildMapByIso2(r.value);
-          if (Object.keys(maps[key]).length > 0) anyOk = true;
+          if (isMeta) { overlay.metaOk = true; overlay.meta = r.value; }
+          else { overlay.vars.push(WB_FIELDS[i]); overlay.values[WB_FIELDS[i]] = r.value; }
         } else {
-          maps[key] = {};
-          console.warn('World Bank indicator failed (' + key + '):', r.reason && r.reason.message);
+          console.warn('World Bank ' + (isMeta ? 'country list' : 'indicator ' + WB_FIELDS[i]) +
+            ' not used (built-in value kept):', r.reason && r.reason.message);
         }
       });
-
-      if (!anyOk) return null;
-
-      var merged = baseCountries(metaList).map(function (c) {
-        var copy = {};
-        for (var p in c) { if (Object.prototype.hasOwnProperty.call(c, p)) copy[p] = c[p]; }
-        var code = c.code;
-        if (maps.pop && maps.pop[code] != null) copy.pop = Math.round(maps.pop[code]);
-        if (maps.leM && maps.leM[code] != null) copy.leM = Math.round(maps.leM[code] * 10) / 10;
-        if (maps.leF && maps.leF[code] != null) copy.leF = Math.round(maps.leF[code] * 10) / 10;
-        if (maps.urban && maps.urban[code] != null) copy.urban = Math.round(maps.urban[code]);
-        if (maps.gdpPc && maps.gdpPc[code] != null) copy.gdpPc = Math.round(maps.gdpPc[code]);
-        if (maps.elec && maps.elec[code] != null) copy.elec = Math.round(maps.elec[code]);
-        if (maps.water && maps.water[code] != null) copy.water = Math.round(maps.water[code]);
-        if (maps.sanit && maps.sanit[code] != null) copy.sanit = Math.round(maps.sanit[code]);
-        if (maps.net && maps.net[code] != null) copy.net = Math.round(maps.net[code]);
-        if (maps.fert && maps.fert[code] != null) copy.fert = Math.round(maps.fert[code] * 10) / 10;
-        if (maps.age014 && maps.age014[code] != null) copy.age014 = Math.round(maps.age014[code] * 10) / 10;
-        if (maps.age65 && maps.age65[code] != null) copy.age65 = Math.round(maps.age65[code] * 10) / 10;
-        if (maps.femaleShare && maps.femaleShare[code] != null) copy.femaleShare = Math.round(maps.femaleShare[code] * 10) / 10;
-        if (maps.agrShare && maps.agrShare[code] != null) copy.agrShare = Math.round(maps.agrShare[code]);
-        if (maps.indShare && maps.indShare[code] != null) copy.indShare = Math.round(maps.indShare[code]);
-        if (maps.srvShare && maps.srvShare[code] != null) copy.srvShare = Math.round(maps.srvShare[code]);
-        if (maps.unemp && maps.unemp[code] != null) copy.unemp = Math.round(maps.unemp[code] * 10) / 10;
-        return copy;
-      });
-      // Drop entries with no usable population (unknown microstates / gaps).
-      merged = merged.filter(function (c) { return c.pop > 0; });
-      if (!merged.length) return null;
-      return merged;
+      return overlayCount(overlay) > 0 ? overlay : null;
     }).catch(function (err) {
       console.warn('fetchLiveData failed:', err && err.message);
       return null;
     });
   }
 
-  // Persistent cache (localStorage, with sessionStorage fallback) so live
-  // values survive reloads and work offline via the service worker.
+  // Kept for compatibility: resolves to the merged country list, or null.
+  function fetchLiveData() {
+    return fetchOverlay().then(function (overlay) {
+      return overlay ? applyOverlay(overlay) : null;
+    });
+  }
+
+  // Persistent cache (localStorage, with sessionStorage fallback) holding only
+  // the validated World Bank overlay, so live values survive reloads.
   function storage() {
     try { if (global.localStorage) return global.localStorage; } catch (e) { /* unavailable */ }
     try { if (global.sessionStorage) return global.sessionStorage; } catch (e) { /* unavailable */ }
     return null;
+  }
+
+  function clearOldCaches() {
+    try {
+      var store = storage();
+      if (store) OLD_CACHE_KEYS.forEach(function (k) { store.removeItem(k); });
+    } catch (e) { /* storage may be unavailable */ }
   }
 
   function readCache() {
@@ -401,55 +517,73 @@
       var raw = store && store.getItem(CACHE_KEY);
       if (!raw) return null;
       var parsed = JSON.parse(raw);
-      if (!parsed || !parsed.ts || !Array.isArray(parsed.countries)) return null;
+      if (!parsed || typeof parsed.ts !== 'number' || !parsed.values || !Array.isArray(parsed.vars)) return null;
       if (Date.now() - parsed.ts > CACHE_TTL) return null;
-      return parsed.countries;
+      return parsed;
     } catch (e) {
       return null;
     }
   }
 
-  function writeCache(countries) {
+  function writeCache(overlay) {
     try {
       var store = storage();
-      if (store) store.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), countries: countries }));
+      if (store) store.setItem(CACHE_KEY, JSON.stringify(overlay));
     } catch (e) { /* storage may be unavailable (private mode / file://) */ }
+  }
+
+  function useStatic() {
+    _countries = STATIC_COUNTRIES.slice();
+    DATA_LOAD_STATUS.source = 'static';
+    DATA_LOAD_STATUS.message = staticMessage();
+    DATA_LOAD_STATUS.loading = false;
   }
 
   function loadData() {
     DATA_LOAD_STATUS.loading = true;
+    clearOldCaches();
 
     // 1. try persistent cache first...
     var cached = readCache();
-    if (cached && cached.length) {
-      _countries = cached;
-      DATA_LOAD_STATUS.source = 'cached';
-      DATA_LOAD_STATUS.message = 'Using cached data (World Bank)';
-      DATA_LOAD_STATUS.loading = false;
-      return Promise.resolve(_countries);
+    if (cached) {
+      var cachedOverlay = {
+        ts: cached.ts,
+        vars: cached.vars.filter(function (f) { return WB_FIELDS.indexOf(f) !== -1; }),
+        values: cached.values,
+        metaOk: cached.metaOk === true,
+        meta: cached.meta || {}
+      };
+      if (overlayCount(cachedOverlay) > 0) {
+        _countries = applyOverlay(cachedOverlay);
+        DATA_LOAD_STATUS.source = 'cached';
+        DATA_LOAD_STATUS.message = liveMessage(cachedOverlay, true);
+        DATA_LOAD_STATUS.loading = false;
+        return Promise.resolve(_countries);
+      }
     }
 
     // 2. try live api...
-    return fetchLiveData().then(function (live) {
-      if (live && live.length) {
-        _countries = live;
-        writeCache(live);
+    return fetchOverlay().then(function (overlay) {
+      if (overlay) {
+        _countries = applyOverlay(overlay);
+        writeCache(overlay);
         DATA_LOAD_STATUS.source = 'live';
-        DATA_LOAD_STATUS.message = 'Using live World Bank data';
+        DATA_LOAD_STATUS.message = liveMessage(overlay, false);
+        DATA_LOAD_STATUS.loading = false;
       } else {
-        _countries = STATIC_COUNTRIES.slice();
-        DATA_LOAD_STATUS.source = 'static';
-        DATA_LOAD_STATUS.message = 'Using built-in data';
+        useStatic();
       }
-      DATA_LOAD_STATUS.loading = false;
       return _countries;
     }).catch(function () {
-      _countries = STATIC_COUNTRIES.slice();
-      DATA_LOAD_STATUS.source = 'static';
-      DATA_LOAD_STATUS.message = 'Using built-in data';
-      DATA_LOAD_STATUS.loading = false;
+      useStatic();
       return _countries;
     });
+  }
+
+  if (!_countries.length) {
+    DATA_LOAD_STATUS.message = 'Built-in data snapshot is missing';
+  } else {
+    DATA_LOAD_STATUS.message = staticMessage();
   }
 
   function getCountries() {

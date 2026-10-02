@@ -1,5 +1,5 @@
 /* generator.js - random-person algorithm.
- * Depends on: App.generateName, App.AGE_BANDS, App.AGE_WEIGHTS, App.OCCUPATIONS, App.HABITATION, App.DATA_LOAD_STATUS.
+ * Depends on: App.generateName, App.AGE_BANDS, App.AGE_WEIGHTS (age fallback only), App.OCCUPATIONS, App.HABITATION, App.DATA_LOAD_STATUS.
  */
 (function (global) {
   'use strict';
@@ -54,12 +54,14 @@
   }
 
   // Step 3: age
-  // Country-specific when available: the country's young share (ages 0-14)
-  // and old share (65+) come from World Bank data (SP.POP.0014.TO.ZS /
-  // SP.POP.65UP.TO.ZS, live with built-in fallback) and anchor the 6-band
-  // model; the working-age remainder (15-64) and the within-group splits
+  // Normal path: a draw from the country's single-year age distribution (UN
+  // WPP, ages 0..100 with 100 meaning 100+, both sexes pooled so that age stays
+  // independent of sex), by cumulative lookup.
+  // Documented fallback, used only for a country with no valid distribution:
+  // the country's young share (ages 0-14) and old share (65+) anchor the old
+  // 6-band model; the working-age remainder (15-64) and the within-group splits
   // (0-4 vs 5-14, 15-24 vs 25-54 vs 55-64) follow the income-group pattern.
-  // Without per-country data, falls back to the pure income-group weights.
+  // Without those shares either, it falls back to the pure income-group weights.
   function countryAgeWeights(country, incomeGroup) {
     if (!country || country.age014 == null || country.age65 == null) return null;
     var young = Number(country.age014);
@@ -80,8 +82,31 @@
     ];
   }
 
+  // Returns the distribution's total when it is usable (101 finite, non-negative
+  // values summing to about 1), else 0.
+  function ageDistTotal(dist) {
+    if (!Array.isArray(dist) || dist.length !== 101) return 0;
+    var total = 0;
+    for (var i = 0; i < 101; i++) {
+      var v = dist[i];
+      if (typeof v !== 'number' || !isFinite(v) || v < 0) return 0;
+      total += v;
+    }
+    return (total >= 0.99 && total <= 1.01) ? total : 0;
+  }
+
   function selectAge(countryOrGroup) {
     var country = (countryOrGroup && typeof countryOrGroup === 'object') ? countryOrGroup : null;
+    var total = country ? ageDistTotal(country.ageDist) : 0;
+    if (total > 0) {
+      var r = Math.random() * total;
+      var cum = 0;
+      for (var a = 0; a < 101; a++) {
+        cum += country.ageDist[a];
+        if (r < cum) return a;
+      }
+      return 100;
+    }
     var incomeGroup = country ? country.incomeGroup : countryOrGroup;
     var weights = (country && countryAgeWeights(country, incomeGroup)) ||
       App.AGE_WEIGHTS[incomeGroup] ||
@@ -130,7 +155,7 @@
       // Habitat bias
       if (o.habitat === 'urban') w *= isUrban ? 1.6 : 0.35;
       else if (o.habitat === 'rural') w *= isUrban ? 0.35 : 1.6;
-      // Country sector mix (live ILO-modelled shares): scale each employed
+      // Country sector mix (ILO-modelled shares): scale each employed
       // occupation by its sector's share of national employment, normalised
       // so the average factor is ~1 (shares sum to ~100).
       if (o.category !== 'Not employed') w *= sectorFactor(country, sectorOf(o));
