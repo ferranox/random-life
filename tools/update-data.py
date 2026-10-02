@@ -66,9 +66,11 @@ URL_WB_META = 'https://api.worldbank.org/v2/country?format=json&per_page=400'
 URL_WB_SOURCE = 'https://api.worldbank.org/v2/sources/2?format=json'
 
 
-def wb_url(ind):
-    # identical query to the one the browser used to make
-    return 'https://api.worldbank.org/v2/country/all/indicator/%s?format=json&mrv=5&per_page=1500' % ind
+def wb_url(ind, mrv=5):
+    # mrv=5 is the query the browser makes. The snapshot of the World Bank owned
+    # variables looks back 10 years (mrv=10) so countries without a recent value
+    # keep their newest older one; a live mrv=5 response never deletes it.
+    return 'https://api.worldbank.org/v2/country/all/indicator/%s?format=json&mrv=%d&per_page=%d' % (ind, mrv, 300 * mrv)
 
 
 # app field -> World Bank indicator.
@@ -220,11 +222,11 @@ def read_wpp(tmp, cmap):
         r = csv.reader(io.TextIOWrapper(z.open('WPP2024_PopulationBySingleAgeSex_Medium_Update.csv'),
                                         encoding='utf-8-sig', newline=''))
         h2 = next(r)
-        require_columns(h2, ['LocID', 'Time', 'AgeGrp', 'PopTotal'], 'WPP update single-age')
+        require_columns(h2, ['LocID', 'Time', 'AgeGrp', 'PopMale', 'PopFemale'], 'WPP update single-age')
         ix2 = {c: i for i, c in enumerate(h2)}
         for row in r:
             if row[ix2['Time']] == yr:
-                upd_sa.setdefault(int(row[ix2['LocID']]), {})[row[ix2['AgeGrp']]] = num(row[ix2['PopTotal']])
+                upd_sa.setdefault(int(row[ix2['LocID']]), {})[row[ix2['AgeGrp']]] = (num(row[ix2['PopMale']]), num(row[ix2['PopFemale']]))
     log('  WPP update (rev.1) overrides locations: %s' % sorted(upd_locs))
 
     out = {}
@@ -262,9 +264,9 @@ def read_wpp(tmp, cmap):
     ages = {}
     r = open_csv_gz(os.path.join(tmp, 'wpp_sa.csv.gz'))
     h = next(r)
-    require_columns(h, ['LocID', 'Time', 'AgeGrp', 'PopTotal', 'Variant'], 'WPP single-age population')
+    require_columns(h, ['LocID', 'Time', 'AgeGrp', 'PopMale', 'PopFemale', 'Variant'], 'WPP single-age population')
     ix = {c: i for i, c in enumerate(h)}
-    iL, iT, iA, iP, iV = ix['LocID'], ix['Time'], ix['AgeGrp'], ix['PopTotal'], ix['Variant']
+    iL, iT, iA, iV, iPM, iPF = ix['LocID'], ix['Time'], ix['AgeGrp'], ix['Variant'], ix['PopMale'], ix['PopFemale']
     for row in r:
         if row[iT] != yr or row[iV] != 'Medium':
             continue
@@ -273,7 +275,7 @@ def read_wpp(tmp, cmap):
         except ValueError:
             continue
         if lid in loc_to_app and lid not in upd_sa:
-            ages.setdefault(lid, {})[row[iA]] = num(row[iP])
+            ages.setdefault(lid, {})[row[iA]] = (num(row[iPM]), num(row[iPF]))
     for lid, d in upd_sa.items():
         if lid in loc_to_app:
             ages[lid] = d
@@ -281,22 +283,24 @@ def read_wpp(tmp, cmap):
         code = loc_to_app[lid]
         if code not in out:
             continue
-        vals = []
+        valsM, valsF = [], []
         ok = True
         for a in range(AGE_N):
             key = '100+' if a == 100 else str(a)
             v = d.get(key)
-            if v is None or v < 0:
+            if v is None or v[0] is None or v[1] is None or v[0] < 0 or v[1] < 0:
                 ok = False
                 break
-            vals.append(v)
+            valsM.append(v[0])
+            valsF.append(v[1])
         if not ok:
             continue
-        total = sum(vals)
+        total = sum(valsM) + sum(valsF)
         if abs(total - out[code]['_pop_k']) / out[code]['_pop_k'] > 0.005:
             raise DataError('WPP %s: single-age total %.1f differs from total population %.1f'
                             % (code, total, out[code]['_pop_k']))
-        out[code]['age'] = quantise(vals)
+        out[code]['ageM'] = quantise(valsM)
+        out[code]['ageF'] = quantise(valsF)
     return out
 
 
@@ -497,12 +501,14 @@ def build(cmap, wpp, wup, ilo, wb_info, wb_series, wb_years):
 
         for f in ('pop', 'femaleShare'):
             rec[f] = pick(f, w.get(f))
-        if 'age' in w:
-            rec['age'] = w['age']
+        if 'ageM' in w:
+            rec['ageM'] = w['ageM']
+            rec['ageF'] = w['ageF']
             rec['age014'] = None
             rec['age65'] = None
         else:
-            rec['age'] = None
+            rec['ageM'] = None
+            rec['ageF'] = None
             # documented fallback: the previous 6-band model, anchored on the World Bank shares
             a14 = wb_series['age014'].get(code)
             a65 = wb_series['age65'].get(code)
@@ -545,10 +551,11 @@ def validate(countries, cmap, wpp):
                 problems.append('%s.%s out of range: %r' % (code, f, v))
         if not c['pop'] or c['pop'] <= 0:
             problems.append('%s has no population' % code)
-        age = c.get('age')
-        if age is not None:
-            if len(age) != AGE_N or any((not isinstance(a, int)) or a < 0 for a in age) or sum(age) != AGE_SCALE:
-                problems.append('%s: invalid age distribution' % code)
+        ages = [c.get('ageM'), c.get('ageF')]
+        if None not in ages:
+            for age in ages:
+                if len(age) != AGE_N or any((not isinstance(a, int)) or a < 0 for a in age) or sum(age) != AGE_SCALE:
+                    problems.append('%s: invalid age distribution' % code)
         else:
             if c.get('age014') is None or c.get('age65') is None:
                 problems.append('%s: no age distribution and no World Bank shares for the 6-band fallback' % code)
@@ -565,7 +572,7 @@ def validate(countries, cmap, wpp):
     for c in countries:
         m = cmap['countries'][c['code']]
         if c['pop'] >= min_major:
-            if m['wpp'] is None or c['code'] not in wpp or c.get('age') is None:
+            if m['wpp'] is None or c['code'] not in wpp or c.get('ageM') is None:
                 problems.append('major country %s (%s) is not mapped to WPP' % (c['code'], c['name']))
             if m['wup'] is None:
                 problems.append('major country %s (%s) is not mapped to WUP' % (c['code'], c['name']))
@@ -597,8 +604,8 @@ def render(countries, meta):
         ' * The WPP / WUP / ILO values never change in the browser. The World Bank values',
         ' * (GDP per capita, internet, water, sanitation, electricity, income group, region)',
         ' * are refreshed live when reachable; the numbers here are the built-in fallback.',
-        ' * age[] = share of the population at each single year of age 0..100 (100 = 100+),',
-        ' * both sexes pooled, in units of 1/100000 (each array sums to exactly 100000).',
+        ' * ageM[] / ageF[] = share of the male / female population at each single year of age',
+        ' * 0..100 (100 = 100+), in units of 1/100000 (each array sums to exactly 100000).',
         ' */',
         '(function (global) {',
         "  'use strict';",
@@ -694,7 +701,7 @@ def main():
         download(URL_WB_SOURCE, os.path.join(tmp, 'wb_source.json'))
         wb_bytes = 0
         for ind in list(WB_OWNED.values()) + list(WB_FALLBACK.values()):
-            wb_bytes += download(wb_url(ind), os.path.join(tmp, 'wb_%s.json' % ind))
+            wb_bytes += download(wb_url(ind, 10 if ind in WB_OWNED.values() else 5), os.path.join(tmp, 'wb_%s.json' % ind))
         owned_bytes = sum(os.path.getsize(os.path.join(tmp, 'wb_%s.json' % i)) for i in WB_OWNED.values())
         meta_bytes = os.path.getsize(os.path.join(tmp, 'wb_meta.json'))
         log('  17 indicators + metadata: %.2f MB (the browser now fetches only 5 indicators + metadata: %.2f MB)'
@@ -730,7 +737,7 @@ def main():
                  'url': 'https://population.un.org/wpp/', 'retrieved': retrieved, 'refYear': WPP_YEAR,
                  'refNote': '1 July %d; the last year WPP labels an estimate (2024 onward are projections)' % WPP_YEAR,
                  'licence': 'CC BY 3.0 IGO',
-                 'variables': ['pop', 'femaleShare', 'age', 'fert', 'leM', 'leF']},
+                 'variables': ['pop', 'femaleShare', 'ageM', 'ageF', 'fert', 'leM', 'leF']},
                 {'id': 'wup', 'short': 'UN WUP 2025', 'org': 'United Nations, DESA, Population Division',
                  'dataset': 'World Urbanization Prospects 2025, percentage urban by national definitions',
                  'release': 'WUP 2025 (2025 Revision)', 'url': 'https://population.un.org/wup/',
@@ -748,7 +755,7 @@ def main():
                  'dataset': 'World Development Indicators: NY.GDP.PCAP.CD, EG.ELC.ACCS.ZS, SH.H2O.BASW.ZS, '
                             'SH.STA.BASS.ZS, IT.NET.USER.ZS, plus country metadata (income group, region)',
                  'release': 'WDI, last updated %s' % wdi_updated, 'url': 'https://data.worldbank.org/',
-                 'retrieved': retrieved, 'refYear': 'newest value per country (mrv=5)',
+                 'retrieved': retrieved, 'refYear': 'newest value per country within the last 10 years (mrv=10)',
                  'refNote': 'originators: ITU (internet), WHO/UNICEF JMP (water, sanitation), '
                             'SDG 7.1.1 custodians (electricity); GDP: national accounts / OECD / World Bank staff',
                  'licence': 'CC BY 4.0',
@@ -760,7 +767,7 @@ def main():
             'unavailable': {k: sorted(v) for k, v in sorted(missing.items())},
             'legacy': legacy,
             'counts': {'countries': len(countries),
-                       'withWppAge': sum(1 for c in countries if c.get('age') is not None)},
+                       'withWppAge': sum(1 for c in countries if c.get('ageM') is not None)},
         }
 
         text = render(countries, meta)

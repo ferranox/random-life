@@ -17,7 +17,7 @@
   <meta property="og:title" content="Random Life Generator – Discover a Random Life on Earth">
   <meta property="og:description" content="Generate a random person with our free random life generator — a statistically plausible fictional identity with country, age, job, income and more.">
   <meta property="og:url" content="https://randomlife.fyi/">
-  <meta property="og:image" content="https://randomlife.fyi/icons/icon.png">
+  <meta property="og:image" content="https://randomlife.fyi/icons/icon-full.png">
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1024">
   <meta property="og:image:height" content="1024">
@@ -25,7 +25,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Random Life Generator – Discover a Random Life on Earth">
   <meta name="twitter:description" content="Generate a random person with our free random life generator — a statistically plausible fictional identity with country, age, job, income and more.">
-  <meta name="twitter:image" content="https://randomlife.fyi/icons/icon.png">
+  <meta name="twitter:image" content="https://randomlife.fyi/icons/icon-full.png">
   <meta name="twitter:image:alt" content="Random Life icon">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -33,7 +33,6 @@
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="favicon.ico" sizes="any">
-  <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="stylesheet" href="styles.css">
   <link rel="preconnect" href="https://api.worldbank.org" crossorigin>
   <link rel="dns-prefetch" href="https://api.worldbank.org">
@@ -51,7 +50,7 @@
     "author": { "@type": "Person", "name": "Alex Bowles" },
     "description": "Free random life generator that creates a statistically plausible fictional person — country, age, sex, urban or rural home, occupation, income, life expectancy and more — weighted by official UN, ILO and World Bank data.",
     "featureList": "Random person generator, fictional identity generator, random country picker, age and occupation generator, income estimate, offline support",
-    "screenshot": "https://randomlife.fyi/icons/icon.png",
+    "screenshot": "https://randomlife.fyi/icons/icon-full.png",
     "isAccessibleForFree": true
   }
   </script>
@@ -247,10 +246,10 @@
       <h3>Data sources</h3>
       <p>The numbers behind each generated life come from the official sources below. Reference years are stated because they are not all the same.</p>
       <ul>
-        <li><strong>UN World Population Prospects 2024</strong> (<a href="https://population.un.org/wpp/" rel="noopener">UN DESA, Population Division</a>; medium variant, including the January 2026 interim update for Togo). Reference year 2023 (1 July), the last year the UN labels an estimate rather than a projection. Used for: total population (country weighting), female share, the population at each single year of age 0-100 (both sexes pooled), total fertility rate, and life expectancy at birth for men and women. Built into the site (snapshot); not fetched live.</li>
+        <li><strong>UN World Population Prospects 2024</strong> (<a href="https://population.un.org/wpp/" rel="noopener">UN DESA, Population Division</a>; medium variant, including the January 2026 interim update for Togo). Reference year 2023 (1 July), the last year the UN labels an estimate rather than a projection. Used for: total population (country weighting), female share, the male and female population at each single year of age 0-100, total fertility rate, and life expectancy at birth for men and women. Built into the site (snapshot); not fetched live.</li>
         <li><strong>UN World Urbanization Prospects 2025</strong> (<a href="https://population.un.org/wup/" rel="noopener">UN DESA, Population Division</a>). Share of the population living in urban areas under each country's own national definition of "urban" (not the Degree of Urbanization classification), 2023. Built into the site; not fetched live.</li>
         <li><strong>ILO modelled estimates, November 2025</strong> (<a href="https://ilostat.ilo.org/" rel="noopener">ILOSTAT</a>). Employment by broad sector (agriculture / industry / services, % of employed people aged 15+) and the unemployment rate (% of the labour force aged 15+), 2024, the latest full year in the release. These are modelled estimates: where a country has no recent survey the ILO imputes values. Built into the site; not fetched live.</li>
-        <li><strong>World Bank Open Data (World Development Indicators)</strong> (<a href="https://data.worldbank.org/" rel="noopener">data.worldbank.org</a>). GDP per capita (current US$), access to electricity, basic drinking water, basic sanitation and internet use, plus each country's income group and region. Newest value per country within the last five years. The access and internet series are published by the World Bank from their originators (SDG 7.1.1 electrification dataset; WHO/UNICEF Joint Monitoring Programme; International Telecommunication Union). Fetched live when online, with a built-in snapshot as fallback.</li>
+        <li><strong>World Bank Open Data (World Development Indicators)</strong> (<a href="https://data.worldbank.org/" rel="noopener">data.worldbank.org</a>). GDP per capita (current US$), access to electricity, basic drinking water, basic sanitation and internet use, plus each country's income group and region. Newest value per country within the last ten years. The access and internet series are published by the World Bank from their originators (SDG 7.1.1 electrification dataset; WHO/UNICEF Joint Monitoring Programme; International Telecommunication Union). Fetched live when online, with a built-in snapshot as fallback.</li>
       </ul>
       <p>Where a UN or ILO source has no value for a country, the matching World Bank series is used if it has one; otherwise the value is left blank and the generator uses its default (for example, the field shows N/A).</p>
 
@@ -269,7 +268,7 @@
       <ul>
         <li><strong>Country</strong> - picked at random from all World Bank members (plus Taiwan), weighted by UN population, so bigger countries turn up more often.</li>
         <li><strong>Sex</strong> - drawn from the country's female share of the population.</li>
-        <li><strong>Age</strong> - drawn from the country's UN population at each single year of age (0 to 100; 100 means 100 or older). Age is drawn for both sexes together, so it does not depend on sex. If a country had no age data the older six-band approximation would be used instead; currently only the Channel Islands rely on it.</li>
+        <li><strong>Age</strong> - drawn from the country's UN population at each single year of age (0 to 100; 100 means 100 or older) for the person's sex. Once the person's sex is drawn, age comes from that sex's distribution, so ages differ by sex as they do in the real population. If a country had no age data the older six-band approximation would be used instead; currently only the Channel Islands rely on it.</li>
         <li><strong>Urban vs. rural</strong> - decided by the country's urban share under its national definition.</li>
         <li><strong>Occupation</strong> - Random Life's own model: a hand-built list weighted by income group and habitat, refined per country by its employment mix (agriculture / industry / services) and unemployment rate, limited to plausible working ages, with student and retirement shares that differ by income group.</li>
         <li><strong>Income</strong> - Random Life's own construction: GDP per capita multiplied by hand-built ratios for income group, occupation and age, plus random variation. A rough figure in nominal USD, not PPP.</li>
@@ -289,7 +288,7 @@
       <h3>Limitations</h3>
       <ul>
         <li>Income figures are rough estimates in nominal USD - <em>not</em> adjusted for local purchasing power (PPP).</li>
-        <li>Population, age, fertility, life expectancy and urban figures refer to 2023, sector and unemployment figures to 2024, and World Bank values to the newest year available (typically 1-2 years old). Age is not drawn conditional on sex.</li>
+        <li>Population, age, fertility, life expectancy and urban figures refer to 2023, sector and unemployment figures to 2024, and World Bank values to the newest year available (typically 1-2 years old).</li>
         <li>Names are illustrative, grouped by broad cultural region, and are not exhaustive or country-specific.</li>
         <li>Some small territories lack values in some sources and show N/A. Taiwan is not covered by the World Bank, so its GDP per capita and access figures are earlier approximations that have no official source here.</li>
       </ul>

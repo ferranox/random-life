@@ -54,9 +54,8 @@
   }
 
   // Step 3: age
-  // Normal path: a draw from the country's single-year age distribution (UN
-  // WPP, ages 0..100 with 100 meaning 100+, both sexes pooled so that age stays
-  // independent of sex), by cumulative lookup.
+  // Normal path: a draw from the country's single-year age distribution for the
+  // person's sex (UN WPP, ages 0..100 with 100 meaning 100+), by cumulative lookup.
   // Documented fallback, used only for a country with no valid distribution:
   // the country's young share (ages 0-14) and old share (65+) anchor the old
   // 6-band model; the working-age remainder (15-64) and the within-group splits
@@ -95,14 +94,21 @@
     return (total >= 0.99 && total <= 1.01) ? total : 0;
   }
 
-  function selectAge(countryOrGroup) {
+  function selectAge(countryOrGroup, sex) {
     var country = (countryOrGroup && typeof countryOrGroup === 'object') ? countryOrGroup : null;
-    var total = country ? ageDistTotal(country.ageDist) : 0;
+    // The sex-specific distribution is used, so age depends on sex as in the
+    // real population (the sex itself is drawn first, from the female share).
+    var dist = null;
+    if (country) {
+      dist = sex === 'female' ? country.ageDistF : country.ageDistM;
+      if (!ageDistTotal(dist)) dist = country.ageDist;
+    }
+    var total = dist ? ageDistTotal(dist) : 0;
     if (total > 0) {
       var r = Math.random() * total;
       var cum = 0;
       for (var a = 0; a < 101; a++) {
-        cum += country.ageDist[a];
+        cum += dist[a];
         if (r < cum) return a;
       }
       return 100;
@@ -232,7 +238,7 @@
     else if (age <= 64) ageAdj = 0.92;
     else ageAdj = 0.65;
 
-    var noise = Math.exp((Math.random() - 0.5) * 0.50); // ~log-normal, sigma≈0.25
+    var noise = Math.exp((Math.random() - 0.5) * 0.50); // log-uniform multiplier in [exp(-0.25), exp(0.25)]
 
     var income = countryMedian * occMultiplier * ageAdj * noise;
     return Math.max(0, Math.round(income));
@@ -329,7 +335,7 @@
     }
     var ig = country.incomeGroup;
     var sex = forcedSex || selectSex(country);
-    var age = selectAge(country);
+    var age = selectAge(country, sex);
     var urbanPct = country.urban != null ? country.urban : 50;
     var isUrban = forcedIsUrban != null ? forcedIsUrban : (Math.random() < (urbanPct / 100));
 

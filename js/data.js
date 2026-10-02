@@ -3,7 +3,7 @@
  * are in the Data & Methodology dialog and in the header of js/dataset.js):
  *   - Built-in snapshot (js/dataset.js, built by tools/update-data.py, loaded
  *     before this file so the first Generate works with no network):
- *       UN WPP 2024  - population, female share, single-year age distribution,
+ *       UN WPP 2024  - population, female share, single-year age distributions by sex,
  *                      total fertility rate, life expectancy at birth by sex
  *       UN WUP 2025  - urban share (national definitions)
  *       ILOSTAT      - employment by sector (agriculture / industry / services)
@@ -141,7 +141,7 @@
   }
 
   // 3. model constants: age bands/weights. These six-band tables are no longer
-  // the normal age model (that is the single-year WPP distribution, ageDist);
+  // the normal age model (that is the single-year WPP distributions, ageDistM / ageDistF);
   // they remain only as the documented fallback for a country without one.
   var AGE_BANDS = [
     { min: 0, max: 4 },
@@ -249,9 +249,9 @@
     return typeof v === 'number' && isFinite(v) && v >= r[0] && v <= r[1];
   }
 
-  // Single-year age distribution: 101 finite non-negative numbers (ages 0..100,
-  // 100 = 100+) normalised to sum to 1. Returns null when invalid, which makes
-  // the generator use the 6-band fallback for that country.
+  // Single-year age distribution (one per sex): 101 finite non-negative numbers
+  // (ages 0..100, 100 = 100+) normalised to sum to 1. Returns null when invalid,
+  // which makes the generator use the 6-band fallback for that country.
   function normaliseAgeDist(arr, scale) {
     if (!Array.isArray(arr) || arr.length !== AGE_COUNT) return null;
     var sum = 0, i;
@@ -291,8 +291,15 @@
       culture: over ? over[2] : cultureForRegion(rec.rid, incomeGroup),
       rid: rec.rid || null,
       flag: flagEmoji(code),
-      ageDist: normaliseAgeDist(rec.age, scale)
+      ageDistM: normaliseAgeDist(rec.ageM, scale),
+      ageDistF: normaliseAgeDist(rec.ageF, scale),
+      ageDist: null
     };
+    // Pooled (both sexes) distribution, kept for consumers that ignore sex.
+    if (c.ageDistM && c.ageDistF && inRange(rec.femaleShare, 'femaleShare')) {
+      var fs = rec.femaleShare / 100;
+      c.ageDist = c.ageDistM.map(function (m, i) { return (1 - fs) * m + fs * c.ageDistF[i]; });
+    }
     NUMERIC_FIELDS.forEach(function (f) {
       c[f] = inRange(rec[f], f) ? rec[f] : null;
     });

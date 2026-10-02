@@ -471,8 +471,8 @@ def scenario_service_worker(base):
         check('service worker active', ready)
         names = c.eval("caches.keys().then(function(k){return k;})", True)
         print('    caches: %s' % names)
-        check('cache name bumped to random-life-v28', names == ['random-life-v28'], names)
-        cached = c.eval("caches.open('random-life-v28').then(function(c){return c.keys();}).then(function(k){return k.map(function(r){return new URL(r.url).pathname;});})", True)
+        check('cache name bumped to random-life-v30', names == ['random-life-v30'], names)
+        cached = c.eval("caches.open('random-life-v30').then(function(c){return c.keys();}).then(function(k){return k.map(function(r){return new URL(r.url).pathname;});})", True)
         check('dataset.js is precached', '/js/dataset.js' in cached, cached)
         c.goto(base + '/index.html')          # now controlled by the SW
         c.cmd('Network.emulateNetworkConditions', {'offline': True, 'latency': 0, 'downloadThroughput': 0, 'uploadThroughput': 0})

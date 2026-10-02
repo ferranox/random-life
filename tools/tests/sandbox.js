@@ -274,8 +274,11 @@
       check(code + ' mean age within 0.4', Math.abs(mE - mO) < 0.4);
       check(code + ' urban within 1.2 pp', Math.abs(c.urban - urb / M * 100) < 1.2);
       check(code + ' female share within 1.2 pp', Math.abs(c.femaleShare - fem / M * 100) < 1.2);
-      check(code + ' age independent of sex (mean age diff < 1.0)', Math.abs(maleAgeSum / maleN - femAgeSum / femN) < 1.0,
-        f2(maleAgeSum / maleN) + ' vs ' + f2(femAgeSum / femN));
+      var mM = 0, mF = 0;
+      for (a2 = 0; a2 < 101; a2++) { mM += a2 * c.ageDistM[a2]; mF += a2 * c.ageDistF[a2]; }
+      check(code + ' mean age by sex matches the WPP male / female distributions (within 0.6)',
+        Math.abs(maleAgeSum / maleN - mM) < 0.6 && Math.abs(femAgeSum / femN - mF) < 0.6,
+        f2(maleAgeSum / maleN) + '/' + f2(mM) + ' ' + f2(femAgeSum / femN) + '/' + f2(mF));
       check(code + ' under-18s have no children', under18kids === 0);
       if (n45 > 500) {
         log('      children: ages 45+ mean ' + f2(ch45 / n45) + ' (TFR ' + f2(c.fert) + '); ages 30-34 mean ' + f2(ch3034 / n3034) + ' (0.80 x TFR = ' + f2(0.8 * c.fert) + ')');
@@ -395,14 +398,14 @@
     check('forced sex male honoured', allMale);
     check('forced habitation urban / rural honoured', urbanOk && ruralOk);
     check('forced isUrban=false honoured', isUrbanOk);
-    var forcedAgeF = 0, forcedAgeM = 0, nf = 0, nm = 0;
-    for (var m2 = 0; m2 < 30000; m2++) {
-      var pf = App.generatePerson(countries, { sex: 'female', countryCode: 'JP' });
-      var pm = App.generatePerson(countries, { sex: 'male', countryCode: 'JP' });
-      forcedAgeF += pf.age; nf++; forcedAgeM += pm.age; nm++;
+    var jp = byCode.JP, fA = 0, mA = 0, eF = 0, eM = 0, K = 30000;
+    for (var m2 = 0; m2 < K; m2++) {
+      fA += App.generatePerson(countries, { sex: 'female', countryCode: 'JP' }).age;
+      mA += App.generatePerson(countries, { sex: 'male', countryCode: 'JP' }).age;
     }
-    log('  forced sex keeps age independent of sex (JP): mean age female ' + f2(forcedAgeF / nf) + ', male ' + f2(forcedAgeM / nm));
-    check('forced sex does not change the age distribution', Math.abs(forcedAgeF / nf - forcedAgeM / nm) < 0.6);
+    for (var q2 = 0; q2 < 101; q2++) { eF += q2 * jp.ageDistF[q2]; eM += q2 * jp.ageDistM[q2]; }
+    log('  forced sex uses that sex\'s age distribution (JP): mean age female ' + f2(fA / K) + ' (source ' + f2(eF) + '), male ' + f2(mA / K) + ' (source ' + f2(eM) + ')');
+    check('forced sex draws age from that sex\'s distribution', Math.abs(fA / K - eF) < 0.5 && Math.abs(mA / K - eM) < 0.5 && fA / K > mA / K);
     var unknown = App.generatePerson(countries, { countryCode: 'ZZ' });
     check('unknown forced country falls back to a normal pick', !!unknown.country.code);
     var dflt = App.generatePerson(countries, { countryCode: 'default' });

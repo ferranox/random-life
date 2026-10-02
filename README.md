@@ -14,7 +14,7 @@ No backend. Static HTML/CSS/JS - works offline once loaded.
 
 - **Country** - picked at random from all World Bank members (plus Taiwan), weighted by UN population (WPP 2024, 2023), so bigger countries turn up more often.
 - **Sex** - drawn from the country's female share of the population (WPP).
-- **Age** - drawn from the country's population at each single year of age, 0 to 100 (WPP; 100 means 100 or older). Both sexes are pooled, so age does not depend on sex. A country with no age data would use the older six-band approximation (fitted to its 0-14 and 65+ shares); currently only the Channel Islands do.
+- **Age** - drawn from the country's population at each single year of age, 0 to 100 (WPP; 100 means 100 or older). The distribution used is that of the person's sex, so ages differ by sex as in the real population. A country with no age data would use the older six-band approximation (fitted to its 0-14 and 65+ shares); currently only the Channel Islands do.
 - **Urban vs. rural** - decided by the country's urban share under its own national definition (UN WUP 2025).
 - **Occupation** - Random Life's own model: a list weighted by income group and habitat, refined per country by its employment mix (agriculture / industry / services) and unemployment rate (ILO), limited to plausible working ages, with student and retirement shares that differ by income group.
 - **Income** - Random Life's own construction: GDP per capita (World Bank) multiplied by hand-built ratios and an age adjustment, plus some random variation. A rough figure in nominal USD, not PPP.
@@ -28,10 +28,10 @@ Official data and official modelled estimates (inputs):
 
 | Used for | Source (dataset, release) | Reference year | Licence | How it reaches the browser |
 |---|---|---|---|---|
-| Population, female share, single-year age distribution, total fertility rate, life expectancy at birth by sex | [UN DESA Population Division, World Population Prospects 2024](https://population.un.org/wpp/) (medium variant, including the January 2026 Togo interim update) | 2023 (1 July), the last year WPP labels an estimate | CC BY 3.0 IGO | built-in snapshot only |
+| Population, female share, single-year age distributions by sex, total fertility rate, life expectancy at birth by sex | [UN DESA Population Division, World Population Prospects 2024](https://population.un.org/wpp/) (medium variant, including the January 2026 Togo interim update) | 2023 (1 July), the last year WPP labels an estimate | CC BY 3.0 IGO | built-in snapshot only |
 | Urban share (national definitions) | [UN DESA Population Division, World Urbanization Prospects 2025](https://population.un.org/wup/) | 2023 (mid-year) | CC BY 3.0 IGO | built-in snapshot only |
 | Employment by sector, unemployment rate | [ILOSTAT, ILO modelled estimates, November 2025](https://ilostat.ilo.org/) (`DF_EMP_2EMP_SEX_ECO_NB`, `DF_UNE_2EAP_SEX_AGE_RT`; ages 15+) | 2024 | CC BY 4.0 | built-in snapshot only |
-| GDP per capita (current US$), electricity access, basic drinking water, basic sanitation, internet use, income group, region | [World Bank Open Data (WDI)](https://data.worldbank.org/) (`NY.GDP.PCAP.CD`, `EG.ELC.ACCS.ZS`, `SH.H2O.BASW.ZS`, `SH.STA.BASS.ZS`, `IT.NET.USER.ZS`) | newest value per country (within five years) | CC BY 4.0 | live when online (cached 12 h), built-in snapshot as fallback |
+| GDP per capita (current US$), electricity access, basic drinking water, basic sanitation, internet use, income group, region | [World Bank Open Data (WDI)](https://data.worldbank.org/) (`NY.GDP.PCAP.CD`, `EG.ELC.ACCS.ZS`, `SH.H2O.BASW.ZS`, `SH.STA.BASS.ZS`, `IT.NET.USER.ZS`) | newest value per country (within ten years) | CC BY 4.0 | live when online (cached 12 h), built-in snapshot as fallback |
 
 The access and internet series are published by the World Bank from their originators: ITU (internet), WHO/UNICEF Joint Monitoring Programme (water, sanitation) and the SDG 7.1.1 electrification dataset (electricity).
 
@@ -59,7 +59,6 @@ Developer-side tests (not deployed; need Chromium or Chrome): `python3 tools/run
 
 - Income figures are rough estimates in nominal USD - not adjusted for local purchasing power (PPP).
 - Population, age, fertility, life expectancy and urban figures refer to 2023, sector and unemployment figures to 2024, and World Bank values to the newest available year, which typically lags by 1-2 years.
-- Age is drawn independently of sex, from both sexes pooled.
 - Some small territories lack values in some sources and show N/A.
 - Names are illustrative, grouped by broad cultural region, and are not exhaustive or country-specific.
 - All generated people are entirely fictional.
