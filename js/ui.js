@@ -356,11 +356,13 @@
   }
 
   function refreshLifeCountries() {
-    if (!els.lifeControls) return;
-    var selects = els.lifeControls.querySelectorAll('select[id$="-country"]');
-    Array.prototype.forEach.call(selects, function (sel) {
-      fillCountrySelect(sel, sel.value);
-    });
+    if (els.lifeControls) {
+      var selects = els.lifeControls.querySelectorAll('select[id$="-country"]');
+      Array.prototype.forEach.call(selects, function (sel) {
+        fillCountrySelect(sel, sel.value);
+      });
+    }
+    refreshEmbedCountries();
   }
 
   function renderHistoryList(listEl, emptyEl, entries, mode) {
@@ -802,6 +804,251 @@
     }
   }
 
+  /* ---------- Embed dialog ---------- */
+
+  function openEmbed() {
+    if (!els.embedDialog) return;
+    updateEmbedSnippet();
+    if (els.embedBtn) els.embedBtn.setAttribute('aria-expanded', 'true');
+    if (typeof els.embedDialog.showModal === 'function') {
+      els.embedDialog.showModal();
+    } else {
+      els.embedDialog.setAttribute('open', '');
+    }
+  }
+  function closeEmbed() {
+    if (!els.embedDialog) return;
+    if (els.embedBtn) els.embedBtn.setAttribute('aria-expanded', 'false');
+    if (typeof els.embedDialog.close === 'function' && els.embedDialog.open) {
+      els.embedDialog.close();
+    } else {
+      els.embedDialog.removeAttribute('open');
+    }
+  }
+
+  function createEmbedLifeControl(index) {
+    var fieldset = doc.createElement('fieldset');
+    fieldset.className = 'life-control';
+
+    var legend = doc.createElement('legend');
+    legend.className = 'life-legend';
+    legend.textContent = 'Life ' + index;
+    fieldset.appendChild(legend);
+
+    var fields = doc.createElement('div');
+    fields.className = 'life-fields';
+
+    var countryLabel = doc.createElement('label');
+    countryLabel.textContent = 'Country';
+    var countrySel = doc.createElement('select');
+    countrySel.id = 'embed-life-' + index + '-country';
+    countrySel.name = countrySel.id;
+    fillCountrySelect(countrySel, 'default');
+    countryLabel.appendChild(countrySel);
+    countryLabel.setAttribute('for', countrySel.id);
+    fields.appendChild(countryLabel);
+
+    var sexLabel = doc.createElement('label');
+    sexLabel.textContent = 'Sex';
+    var sexSel = makeSelect('embed-life-' + index + '-sex', [
+      ['default', 'Default'],
+      ['male', 'Male'],
+      ['female', 'Female']
+    ]);
+    sexLabel.appendChild(sexSel);
+    sexLabel.setAttribute('for', sexSel.id);
+    fields.appendChild(sexLabel);
+
+    var habLabel = doc.createElement('label');
+    habLabel.textContent = 'Habitation';
+    var habSel = makeSelect('embed-life-' + index + '-habitation', [
+      ['default', 'Default'],
+      ['urban', 'Urban'],
+      ['rural', 'Rural']
+    ]);
+    habLabel.appendChild(habSel);
+    habLabel.setAttribute('for', habSel.id);
+    fields.appendChild(habLabel);
+
+    fieldset.appendChild(fields);
+    return fieldset;
+  }
+
+  function embedControlEls() {
+    if (!els.embedLifeControls) return [];
+    return Array.prototype.slice.call(
+      els.embedLifeControls.querySelectorAll('.life-control'));
+  }
+
+  function renumberEmbedLives() {
+    var controls = embedControlEls();
+    for (var i = 0; i < controls.length; i++) {
+      var n = i + 1;
+      var fs = controls[i];
+      var legend = fs.querySelector('legend');
+      if (legend) legend.textContent = 'Life ' + n;
+      var selects = fs.querySelectorAll('select');
+      var kinds = ['country', 'sex', 'habitation'];
+      for (var k = 0; k < selects.length && k < kinds.length; k++) {
+        var sel = selects[k];
+        var newId = 'embed-life-' + n + '-' + kinds[k];
+        sel.id = newId;
+        sel.name = newId;
+        if (sel.parentNode && sel.parentNode.tagName &&
+            sel.parentNode.tagName.toLowerCase() === 'label') {
+          sel.parentNode.setAttribute('for', newId);
+        }
+      }
+    }
+  }
+
+  function getEmbedLifeConfigs() {
+    var controls = embedControlEls();
+    if (!controls.length) {
+      return [{ country: 'default', sex: 'default', habitation: 'default' }];
+    }
+    return controls.map(function (fs) {
+      var selects = fs.querySelectorAll('select');
+      var countryRaw = selects[0] ? selects[0].value : 'default';
+      var country = (!countryRaw || String(countryRaw).toLowerCase() === 'default')
+        ? 'default' : countryRaw;
+      var sexRaw = selects[1] ? selects[1].value : 'default';
+      var sex = (sexRaw === 'male' || sexRaw === 'female') ? sexRaw : 'default';
+      var habRaw = selects[2] ? selects[2].value : 'default';
+      var hab = (habRaw === 'urban' || habRaw === 'rural') ? habRaw : 'default';
+      return { country: country, sex: sex, habitation: hab };
+    });
+  }
+
+  function syncEmbedLifeControls() {
+    if (!els.embedLifeControls || !els.embedLivesCount) return;
+    var want = parseInt(els.embedLivesCount.value, 10);
+    if (!(want >= 1 && want <= MAX_LIVES)) want = 1;
+    var have = embedControlEls().length;
+    if (want > have) {
+      for (var i = have; i < want; i++) {
+        els.embedLifeControls.appendChild(createEmbedLifeControl(i + 1));
+      }
+    } else if (want < have) {
+      var controls = embedControlEls();
+      for (var j = controls.length - 1; j >= want; j--) {
+        if (controls[j].parentNode === els.embedLifeControls) {
+          els.embedLifeControls.removeChild(controls[j]);
+        }
+      }
+    }
+    renumberEmbedLives();
+  }
+
+  function getEmbedStyleOpts() {
+    var clamp = (global.App && global.App.clampEmbedInt) || function (v, mn, mx, fb) {
+      var n = parseInt(v, 10);
+      if (!isFinite(n)) return fb;
+      if (n < mn) return mn;
+      if (n > mx) return mx;
+      return n;
+    };
+    var widthMode = els.embedWidthMode ? els.embedWidthMode.value : 'responsive';
+    if (widthMode !== 'fixed') widthMode = 'responsive';
+    return {
+      widthMode: widthMode,
+      maxWidth: els.embedMaxWidth ? clamp(els.embedMaxWidth.value, 100, 2000, 900) : 900,
+      fixedWidth: els.embedFixedWidth ? clamp(els.embedFixedWidth.value, 200, 2000, 900) : 900,
+      height: els.embedHeight ? clamp(els.embedHeight.value, 200, 2000, 600) : 600,
+      border: els.embedBorder ? !!els.embedBorder.checked : false,
+      radius: els.embedRadius ? clamp(els.embedRadius.value, 0, 50, 0) : 0
+    };
+  }
+
+  function updateEmbedSnippet() {
+    if (!els.embedSnippet) return;
+    if (!global.App || !global.App.buildEmbedUrl || !global.App.buildEmbedSnippet) return;
+    var configs = getEmbedLifeConfigs();
+    var url = global.App.buildEmbedUrl(configs);
+    var snippet = global.App.buildEmbedSnippet(url, getEmbedStyleOpts());
+    els.embedSnippet.textContent = snippet;
+    if (els.embedCopyStatus) els.embedCopyStatus.textContent = '';
+  }
+
+  function updateEmbedStylingVisibility() {
+    var isFixed = els.embedWidthMode && els.embedWidthMode.value === 'fixed';
+    // Keep both inputs usable but hint which applies; disabling the inactive
+    // one prevents invalid CSS and clarifies behaviour.
+    if (els.embedMaxWidth) els.embedMaxWidth.disabled = !!isFixed;
+    if (els.embedFixedWidth) els.embedFixedWidth.disabled = !isFixed;
+    var maxLabel = els.embedMaxWidth && els.embedMaxWidth.closest
+      ? els.embedMaxWidth.closest('label') : null;
+    var fixedLabel = els.embedFixedWidth && els.embedFixedWidth.closest
+      ? els.embedFixedWidth.closest('label') : null;
+    if (maxLabel) maxLabel.style.opacity = isFixed ? '0.5' : '1';
+    if (fixedLabel) fixedLabel.style.opacity = isFixed ? '1' : '0.5';
+  }
+
+  var embedCopyResetTimer = null;
+  function copyEmbedSnippet() {
+    if (!els.embedSnippet || !els.embedCopyBtn) return;
+    var text = els.embedSnippet.textContent;
+    var btn = els.embedCopyBtn;
+    var original = btn.getAttribute('data-label') || 'Copy HTML';
+    if (!btn.getAttribute('data-label')) btn.setAttribute('data-label', original);
+    function showCopied() {
+      btn.textContent = 'Copied!';
+      if (els.embedCopyStatus) els.embedCopyStatus.textContent = '';
+      if (embedCopyResetTimer) global.clearTimeout(embedCopyResetTimer);
+      embedCopyResetTimer = global.setTimeout(function () {
+        btn.textContent = original;
+      }, 2000);
+    }
+    function showFailed() {
+      if (els.embedCopyStatus) {
+        els.embedCopyStatus.textContent = 'Copy failed — select the code above and copy manually.';
+      } else {
+        btn.textContent = 'Copy failed';
+        if (embedCopyResetTimer) global.clearTimeout(embedCopyResetTimer);
+        embedCopyResetTimer = global.setTimeout(function () {
+          btn.textContent = original;
+        }, 2000);
+      }
+    }
+    function fallbackCopy() {
+      try {
+        var ta = doc.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.top = '-9999px';
+        ta.style.opacity = '0';
+        doc.body.appendChild(ta);
+        ta.select();
+        var ok = false;
+        try { ok = doc.execCommand('copy'); } catch (e) { ok = false; }
+        if (ta.parentNode) ta.parentNode.removeChild(ta);
+        if (ok) showCopied();
+        else showFailed();
+      } catch (e) {
+        showFailed();
+      }
+    }
+    try {
+      if (global.navigator && global.navigator.clipboard &&
+          typeof global.navigator.clipboard.writeText === 'function') {
+        global.navigator.clipboard.writeText(text).then(showCopied, fallbackCopy);
+      } else {
+        fallbackCopy();
+      }
+    } catch (e) {
+      fallbackCopy();
+    }
+  }
+
+  function refreshEmbedCountries() {
+    if (!els.embedLifeControls) return;
+    var selects = els.embedLifeControls.querySelectorAll('select[id$="-country"]');
+    Array.prototype.forEach.call(selects, function (sel) {
+      fillCountrySelect(sel, sel.value);
+    });
+  }
+
   function initUI(generateFn) {
     els.generateBtn = $('generate-btn');
     els.regenerateBtn = $('regenerate-btn');
@@ -824,6 +1071,19 @@
     els.contactDialog = $('contact-dialog');
     els.privacyBtn = $('privacy-btn');
     els.privacyDialog = $('privacy-dialog');
+    els.embedBtn = $('embed-btn');
+    els.embedDialog = $('embed-dialog');
+    els.embedSnippet = $('embed-snippet');
+    els.embedCopyBtn = $('embed-copy-btn');
+    els.embedCopyStatus = $('embed-copy-status');
+    els.embedLivesCount = $('embed-lives-count');
+    els.embedLifeControls = $('embed-life-controls');
+    els.embedWidthMode = $('embed-width-mode');
+    els.embedMaxWidth = $('embed-max-width');
+    els.embedFixedWidth = $('embed-fixed-width');
+    els.embedHeight = $('embed-height');
+    els.embedBorder = $('embed-border');
+    els.embedRadius = $('embed-radius');
     els.tabRecent = $('history-tab-recent');
     els.tabSaved = $('history-tab-saved');
     els.recentPane = $('history-recent-pane');
@@ -877,7 +1137,7 @@
     doc.addEventListener('keydown', function (e) {
       if (!e || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.code !== 'Space' && e.key !== ' ' && e.key !== 'Spacebar') return;
-      if ((els.infoDialog && els.infoDialog.open) || (els.historyDialog && els.historyDialog.open) || (els.contactDialog && els.contactDialog.open) || (els.privacyDialog && els.privacyDialog.open)) return;
+      if ((els.infoDialog && els.infoDialog.open) || (els.historyDialog && els.historyDialog.open) || (els.contactDialog && els.contactDialog.open) || (els.privacyDialog && els.privacyDialog.open) || (els.embedDialog && els.embedDialog.open)) return;
       var active = doc.activeElement;
       if (active) {
         var tag = (active.tagName || '').toLowerCase();
@@ -956,6 +1216,67 @@
       });
     }
 
+    // Embed dialog: start with one default life and default styling.
+    if (els.embedLifeControls) {
+      els.embedLifeControls.innerHTML = '';
+      els.embedLifeControls.appendChild(createEmbedLifeControl(1));
+      renumberEmbedLives();
+    }
+    if (els.embedLivesCount) {
+      els.embedLivesCount.value = '1';
+      els.embedLivesCount.addEventListener('change', function () {
+        syncEmbedLifeControls();
+        updateEmbedSnippet();
+      });
+    }
+    if (els.embedLifeControls) {
+      els.embedLifeControls.addEventListener('change', updateEmbedSnippet);
+    }
+    if (els.embedWidthMode) {
+      els.embedWidthMode.addEventListener('change', function () {
+        updateEmbedStylingVisibility();
+        updateEmbedSnippet();
+      });
+    }
+    if (els.embedMaxWidth) {
+      els.embedMaxWidth.addEventListener('input', updateEmbedSnippet);
+      els.embedMaxWidth.addEventListener('change', updateEmbedSnippet);
+    }
+    if (els.embedFixedWidth) {
+      els.embedFixedWidth.addEventListener('input', updateEmbedSnippet);
+      els.embedFixedWidth.addEventListener('change', updateEmbedSnippet);
+    }
+    if (els.embedHeight) {
+      els.embedHeight.addEventListener('input', updateEmbedSnippet);
+      els.embedHeight.addEventListener('change', updateEmbedSnippet);
+    }
+    if (els.embedBorder) {
+      els.embedBorder.addEventListener('change', updateEmbedSnippet);
+    }
+    if (els.embedRadius) {
+      els.embedRadius.addEventListener('input', updateEmbedSnippet);
+      els.embedRadius.addEventListener('change', updateEmbedSnippet);
+    }
+    if (els.embedCopyBtn) {
+      els.embedCopyBtn.addEventListener('click', copyEmbedSnippet);
+    }
+    if (els.embedBtn) els.embedBtn.addEventListener('click', openEmbed);
+    if (els.embedDialog) {
+      var embedCloseBtns = els.embedDialog.querySelectorAll('.dialog-close');
+      Array.prototype.forEach.call(embedCloseBtns, function (closeBtn) {
+        closeBtn.addEventListener('click', closeEmbed);
+      });
+      els.embedDialog.addEventListener('click', function (e) {
+        if (e.target === els.embedDialog) closeEmbed();
+      });
+      els.embedDialog.addEventListener('close', function () {
+        if (els.embedBtn) els.embedBtn.setAttribute('aria-expanded', 'false');
+        releaseInvokerFocus(els.embedBtn);
+      });
+    }
+    updateEmbedStylingVisibility();
+    updateEmbedSnippet();
+
     renderHistory();
     updateDataStatus();
   }
@@ -968,6 +1289,12 @@
   App.getLifeConfigs = getLifeConfigs;
   App.refreshLifeCountries = refreshLifeCountries;
   App.addLifeControl = addLifeControl;
+  App.sortedCountries = sortedCountries;
+  App.fillCountrySelect = fillCountrySelect;
+  App.overridesFromConfig = overridesFromConfig;
+  App.getEmbedLifeConfigs = getEmbedLifeConfigs;
+  App.updateEmbedSnippet = updateEmbedSnippet;
+  App.refreshEmbedCountries = refreshEmbedCountries;
   App.MAX_LIVES = MAX_LIVES;
   App.getRecentLives = function () { return recentLives; };
   App.getSavedLives = function () { return savedLives; };

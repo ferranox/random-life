@@ -120,6 +120,7 @@
       <button id="info-btn" type="button" class="secondary outline" aria-expanded="false" aria-controls="info-dialog">Data &amp; Methodology</button>
       <button id="history-btn" type="button" class="secondary outline" aria-expanded="false" aria-controls="history-dialog">History</button>
       <button id="contact-btn" type="button" class="secondary outline" aria-expanded="false" aria-controls="contact-dialog">Contact</button>
+      <button id="embed-btn" type="button" class="secondary outline" aria-expanded="false" aria-controls="embed-dialog">Embed</button>
       <button id="privacy-btn" type="button" class="secondary outline" aria-expanded="false" aria-controls="privacy-dialog">Privacy</button>
     </div>
     <p><small>An educational thought experiment in gratitude and global understanding. Generated people are entirely fictional; statistics approximate real global distributions.</small></p>
@@ -192,6 +193,69 @@
 
         <button type="submit">Send message</button>
       </form>
+      <footer>
+        <button class="dialog-close secondary" type="button">Close</button>
+      </footer>
+    </article>
+  </dialog>
+
+  <dialog id="embed-dialog" aria-label="Embed Random Life">
+    <article>
+      <header>
+        <button class="dialog-close" type="button" rel="prev" aria-label="Close"></button>
+        <h2>Embed Random Life</h2>
+      </header>
+
+      <p>Configure a random life generator and copy the resulting HTML into your own website.</p>
+
+      <h3>Embed code</h3>
+      <div class="embed-snippet-wrap">
+        <pre><code id="embed-snippet"></code></pre>
+        <button id="embed-copy-btn" type="button" class="secondary">Copy HTML</button>
+        <p><small id="embed-copy-status" aria-live="polite"></small></p>
+      </div>
+
+      <h3>Generator options</h3>
+      <div class="embed-lives-row">
+        <label for="embed-lives-count">Number of lives
+          <select id="embed-lives-count">
+            <option value="1" selected>1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </label>
+      </div>
+      <div id="embed-life-controls" aria-label="Embedded lives configuration"></div>
+
+      <div class="embed-styling">
+        <h3>Embed styling</h3>
+        <div class="embed-style-grid">
+          <label for="embed-width-mode">Width
+            <select id="embed-width-mode">
+              <option value="responsive" selected>Responsive (fills container)</option>
+              <option value="fixed">Fixed width</option>
+            </select>
+          </label>
+          <label for="embed-max-width">Maximum width (px)
+            <input type="number" id="embed-max-width" min="100" max="2000" step="1" value="900">
+          </label>
+          <label for="embed-fixed-width">Fixed width (px)
+            <input type="number" id="embed-fixed-width" min="200" max="2000" step="1" value="900">
+          </label>
+          <label for="embed-height">Height (px)
+            <input type="number" id="embed-height" min="200" max="2000" step="1" value="600">
+          </label>
+          <label class="embed-check" for="embed-border">
+            <input type="checkbox" id="embed-border"> Show border
+          </label>
+          <label for="embed-radius">Border radius (px)
+            <input type="number" id="embed-radius" min="0" max="50" step="1" value="0">
+          </label>
+        </div>
+      </div>
+
       <footer>
         <button class="dialog-close secondary" type="button">Close</button>
       </footer>
@@ -314,6 +378,7 @@
   <script src="js/dataset.js"></script>
   <script src="js/data.js"></script>
   <script src="js/generator.js"></script>
+  <script src="js/embed.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/app.js"></script>
 </body>

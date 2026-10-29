@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Random Life – Embedded Generator</title>
+  <meta name="description" content="Embedded random life generator — a statistically plausible fictional person, weighted by real global data.">
+  <meta name="robots" content="noindex, follow">
+  <link rel="canonical" href="https://randomlife.fyi/embed">
+  <link rel="icon" href="../favicon.ico" sizes="any">
+  <link rel="stylesheet" href="../styles.css">
+  <style>
+    body.embed { min-height: 0; }
+    main.embed-main { padding-top: 1rem; padding-bottom: 1rem; }
+    .embed-top { margin-bottom: 1rem; }
+    .embed-top h1 { font-size: 1.375rem; margin-bottom: 0.25rem; }
+    .embed-top p { color: var(--muted); margin-bottom: 0; font-size: 0.9375rem; }
+  </style>
+</head>
+<body class="embed">
+  <main class="container embed-main">
+    <div class="embed-top">
+      <h1>Random Life</h1>
+      <p>A statistically plausible fictional person, generated from real global data.</p>
+    </div>
+
+    <section id="embed-profile-section" aria-live="polite">
+      <article id="embed-profile-card">
+        <header id="embed-profile-header">
+          <h2 id="embed-person-name"></h2>
+          <p>
+            <span id="embed-person-age-gender"></span><br>
+            <span id="embed-person-country"><span id="embed-country-flag"></span> <span id="embed-country-name"></span></span>
+          </p>
+        </header>
+        <div class="overflow-auto">
+          <table>
+            <tbody id="embed-profile-attributes"></tbody>
+          </table>
+        </div>
+        <footer>
+          <button id="embed-generate-btn" type="button" class="secondary">Generate again</button>
+        </footer>
+      </article>
+    </section>
+
+    <p><small id="embed-data-status" aria-live="polite"></small></p>
+  </main>
+
+  <script src="../js/names.js"></script>
+  <script src="../js/dataset.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/generator.js"></script>
+  <script src="../js/embed.js"></script>
+  <script>
+  (function () {
+    'use strict';
+    var App = window.App || {};
+    var configs = [{ country: 'default', sex: 'default', habitation: 'default' }];
+
+    function $(id) { return document.getElementById(id); }
+
+    function fmtMoney(n) {
+      return n.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    }
+
+    function sexWord(sex, age) {
+      if (age <= 12) return sex === 'male' ? 'boy' : 'girl';
+      if (age <= 17) return sex === 'male' ? 'teenage boy' : 'teenage girl';
+      return sex === 'male' ? 'man' : 'woman';
+    }
+
+    function attrRow(label, value, cellClass) {
+      var row = document.createElement('tr');
+      var th = document.createElement('th');
+      th.setAttribute('scope', 'row');
+      th.textContent = label;
+      var td = document.createElement('td');
+      td.textContent = value;
+      if (cellClass) td.className = cellClass;
+      row.appendChild(th);
+      row.appendChild(td);
+      return row;
+    }
+
+    function personDetailRows(person, tbody) {
+      tbody.appendChild(attrRow('Age / Sex', person.age + '-year-old ' +
+        sexWord(person.sex, person.age) + ', ' + (person.isUrban ? 'urban' : 'rural')));
+      tbody.appendChild(attrRow('Country', (person.country.flag ? person.country.flag + ' ' : '') + person.country.name));
+      tbody.appendChild(attrRow('Occupation', person.occupation.name, 'occ'));
+      tbody.appendChild(attrRow('Income', person.income == null
+        ? 'N/A' : '$' + fmtMoney(person.income) + '/year'));
+      tbody.appendChild(attrRow('Habitation', person.habitation));
+      tbody.appendChild(attrRow('Life expectancy', Math.round(person.lifeExpectancy) + ' years'));
+      if (person.children == null || person.fertility == null) {
+        tbody.appendChild(attrRow('Children', 'N/A'));
+      } else {
+        tbody.appendChild(attrRow('Children', String(person.children)));
+      }
+      function accessRow(label, has) {
+        tbody.appendChild(attrRow(label, has == null ? 'N/A' : (has ? '✅' : '❌')));
+      }
+      if (person.electricity) accessRow('Electricity', person.electricity.has);
+      if (person.water) accessRow('Drinking water', person.water.has);
+      if (person.sanitation) accessRow('Sanitation', person.sanitation.has);
+      if (person.internet) {
+        accessRow('Internet', person.internet.uses == null ? null : !!person.internet.uses);
+      }
+    }
+
+    function ensureHead() {
+      var card = $('embed-profile-card');
+      var table = card ? card.querySelector('table') : null;
+      if (!table) return null;
+      var head = table.querySelector('thead');
+      if (!head) {
+        head = document.createElement('thead');
+        table.insertBefore(head, table.firstChild);
+      }
+      return head;
+    }
+
+    function renderSingle(person) {
+      var card = $('embed-profile-card');
+      var table = card ? card.querySelector('table') : null;
+      var head = table ? table.querySelector('thead') : null;
+      if (head) head.hidden = true;
+      if (table) table.removeAttribute('data-compare');
+      $('embed-profile-header').hidden = false;
+      $('embed-person-name').textContent =
+        (person.name.first + ' ' + (person.name.last ? person.name.last.charAt(0) + '.' : '')).trim();
+      $('embed-person-age-gender').textContent = person.age + '-year-old ' +
+        sexWord(person.sex, person.age) + ', ' + (person.isUrban ? 'urban' : 'rural');
+      $('embed-country-flag').textContent = person.country.flag || '';
+      $('embed-country-name').textContent = person.country.name;
+      var tbody = $('embed-profile-attributes');
+      tbody.innerHTML = '';
+      personDetailRows(person, tbody);
+    }
+
+    function incomeText(p) {
+      if (!p || p.income == null) return 'N/A';
+      return '$' + fmtMoney(p.income) + '/year';
+    }
+    function childrenText(p) {
+      if (!p || p.children == null || p.fertility == null) return 'N/A';
+      return String(p.children);
+    }
+    function accessText(has) {
+      if (has == null) return 'N/A';
+      return has ? '✅' : '❌';
+    }
+
+    function renderMultiple(persons) {
+      $('embed-profile-header').hidden = true;
+      var card = $('embed-profile-card');
+      var table = card ? card.querySelector('table') : null;
+      if (table) table.setAttribute('data-compare', 'true');
+      var head = ensureHead();
+      if (head) {
+        head.hidden = false;
+        head.innerHTML = '';
+        var hr = document.createElement('tr');
+        var corner = document.createElement('th');
+        corner.setAttribute('scope', 'col');
+        corner.className = 'compare-corner';
+        corner.textContent = '';
+        hr.appendChild(corner);
+        for (var i = 0; i < persons.length; i++) {
+          var th = document.createElement('th');
+          th.setAttribute('scope', 'col');
+          th.className = 'compare-person';
+          var nd = document.createElement('div');
+          nd.className = 'compare-name';
+          var nm = persons[i].name;
+          nd.textContent = (nm.first + ' ' + (nm.last ? nm.last.charAt(0) + '.' : '')).trim();
+          var sd = document.createElement('div');
+          sd.className = 'compare-sub';
+          sd.textContent = persons[i].age + '-year-old ' +
+            sexWord(persons[i].sex, persons[i].age) + ', ' +
+            (persons[i].isUrban ? 'urban' : 'rural');
+          var cd = document.createElement('div');
+          cd.className = 'compare-country';
+          cd.textContent = (persons[i].country.flag ? persons[i].country.flag + ' ' : '') +
+            persons[i].country.name;
+          th.appendChild(nd);
+          th.appendChild(sd);
+          th.appendChild(cd);
+          hr.appendChild(th);
+        }
+        head.appendChild(hr);
+      }
+      var tbody = $('embed-profile-attributes');
+      tbody.innerHTML = '';
+      function row(label, fn, cls) {
+        var tr = document.createElement('tr');
+        var th2 = document.createElement('th');
+        th2.setAttribute('scope', 'row');
+        th2.textContent = label;
+        tr.appendChild(th2);
+        for (var j = 0; j < persons.length; j++) {
+          var td = document.createElement('td');
+          td.textContent = fn(persons[j]);
+          if (cls) td.className = cls;
+          tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
+      }
+      row('Occupation', function (p) { return p.occupation.name; }, 'occ');
+      row('Income', incomeText);
+      row('Habitation', function (p) { return p.habitation; });
+      row('Life expectancy', function (p) { return Math.round(p.lifeExpectancy) + ' years'; });
+      row('Children', childrenText);
+      row('Electricity', function (p) { return p.electricity ? accessText(p.electricity.has) : 'N/A'; });
+      row('Drinking water', function (p) { return p.water ? accessText(p.water.has) : 'N/A'; });
+      row('Sanitation', function (p) { return p.sanitation ? accessText(p.sanitation.has) : 'N/A'; });
+      row('Internet', function (p) {
+        if (!p.internet || p.internet.uses == null) return 'N/A';
+        return accessText(!!p.internet.uses);
+      });
+    }
+
+    function generate() {
+      var btn = $('embed-generate-btn');
+      if (btn) {
+        btn.disabled = true;
+        btn.setAttribute('aria-busy', 'true');
+      }
+      function run() {
+        try {
+          var countries = App.getCountries();
+          var persons = [];
+          for (var i = 0; i < configs.length; i++) {
+            var ov = App.embedOverridesFromConfig
+              ? App.embedOverridesFromConfig(configs[i])
+              : { countryCode: null, sex: null, habitation: null };
+            var p = App.generatePerson(countries, ov);
+            if (p) persons.push(p);
+          }
+          if (persons.length === 1) renderSingle(persons[0]);
+          else if (persons.length > 1) renderMultiple(persons);
+        } catch (e) {
+          if (window.console) console.warn('embed generate failed', e);
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.removeAttribute('aria-busy');
+          }
+        }
+      }
+      // Let the button state paint first.
+      if (window.requestAnimationFrame) {
+        window.requestAnimationFrame(function () {
+          window.setTimeout(run, 60);
+        });
+      } else {
+        window.setTimeout(run, 60);
+      }
+    }
+
+    function updateStatus() {
+      var st = App.DATA_LOAD_STATUS || { message: 'Using built-in data', source: 'static' };
+      var el = $('embed-data-status');
+      if (el) {
+        el.textContent = st.message;
+        el.setAttribute('data-source', st.source);
+      }
+    }
+
+    function init() {
+      try {
+        var parsed = App.parseEmbedParams
+          ? App.parseEmbedParams(window.location.search)
+          : [{ country: 'default', sex: 'default', habitation: 'default' }];
+        if (parsed && parsed.length) configs = parsed;
+      } catch (e) {
+        configs = [{ country: 'default', sex: 'default', habitation: 'default' }];
+      }
+      var btn = $('embed-generate-btn');
+      if (btn) btn.addEventListener('click', generate);
+      App.loadData().then(function () {
+        updateStatus();
+        generate();
+      }).catch(function () {
+        updateStatus();
+        generate();
+      });
+      updateStatus();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+  </script>
+</body>
+</html>
